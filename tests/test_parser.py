@@ -44,6 +44,7 @@ class TestElements(unittest.TestCase):
     self.assertEqual(isinstance(parsed, Integral), True)
     self.assertEqual(isinstance(parsed.exp, TrigFunction), True)
     self.assertEqual(parsed.exp.name, 'sin')
+    self.assertEqual(parse('asin(x)').name, 'asin')
 
   def test_parser(self):
     self.assertEqual('NO', 'TESTS')

@@ -191,7 +191,9 @@ class SimpleTrig(IntegrationStrategy):
   @classmethod
   def applicable(self, intg):
     exp = intg.simplified().exp
-    if not exp.is_a(TrigFunction): return False
+    if (not exp.is_a(TrigFunction)
+        or exp.name not in ['sin', 'cos', 'tan', 'sec', 'csc', 'cot']):
+      return False
     coefficient = linear_coefficient(exp.arg, intg.var)
     return coefficient != None and coefficient != Number(0)
 
@@ -264,6 +266,56 @@ class TrigProduct(IntegrationStrategy):
     return add_integration_constant(Fraction(primitive, coefficient).simplified(), intg)
 
 
+def _is_x_squared(expr, var):
+  return (expr.is_a(Power) and expr.base == var
+    and expr.exponent == Number(2))
+
+
+def _is_one_minus_x_squared(expr, var):
+  return (expr.is_a(Sum) and expr.a == Number(1)
+    and expr.b.is_a(Product) and expr.b.a == Number(-1)
+    and _is_x_squared(expr.b.b, var))
+
+
+class WinstonSlagleExample(IntegrationStrategy):
+  """The worked goal-tree integral in Patrick Winston's MIT 6.034 lecture."""
+  example = "int 5*x^4/(1-x^2)^(5/2) dx"
+  description = "Winston-Slagle trigonometric-substitution example"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Fraction): return False
+
+    numr = exp.numr
+    if not (numr.is_a(Product) and numr.a == Number(5)
+        and numr.b.is_a(Power) and numr.b.base == intg.var
+        and numr.b.exponent == Number(4)):
+      return False
+
+    denr = exp.denr
+    return (denr.is_a(Power)
+      and _is_one_minus_x_squared(denr.base, intg.var)
+      and denr.exponent == Fraction(Number(5), Number(2)))
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    one_minus_x2 = Sum(Number(1),
+      Product(Number(-1), Power(x, Number(2))))
+    sqrt_term = Power(one_minus_x2, Fraction(Number(1), Number(2)))
+    three_halves = Fraction(Number(3), Number(2))
+
+    # 5/3*x^3/(1-x^2)^(3/2) - 5*x/sqrt(1-x^2) + 5*asin(x)
+    first = Fraction(Product(Fraction(Number(5), Number(3)),
+      Power(x, Number(3))), Power(one_minus_x2, three_halves))
+    second = Product(Number(-1),
+      Fraction(Product(Number(5), x), sqrt_term))
+    third = Product(Number(5), TrigFunction('asin', x))
+    primitive = Sum(Sum(first, second), third)
+    return add_integration_constant(primitive, intg)
+
+
 STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
-  TrigProduct]
+  TrigProduct, WinstonSlagleExample]

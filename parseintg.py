@@ -22,7 +22,7 @@ PARENS_FLAT = ['(', ')', '[', ']']
 PARENS_LEFT  = ['(', '[']
 PARENS_RIGHT = [')', ']']
 OPERATORS = ["*", "+", "/", "-","(",")","[","]"]
-FUNCTION_NAMES = ['sin', 'cos', 'tan', 'sec', 'csc', 'cot']
+FUNCTION_NAMES = ['asin', 'sin', 'cos', 'tan', 'sec', 'csc', 'cot']
 
 
 class ParseError(Exception): pass

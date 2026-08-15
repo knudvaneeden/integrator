@@ -104,6 +104,14 @@ class TestStrategies(unittest.TestCase):
     intg.exp = Product(intg.exp, TrigFunction('tan', intg.exp.arg))
     self.assertEqual(TrigProduct.applicable(intg), True)
 
+  def test_WinstonSlagleExample(self):
+    from parseintg import parse
+    intg = parse('int 5*x^4/(1-x^2)^(5/2) dx')
+    self.assertEqual(WinstonSlagleExample.applicable(intg), True)
+    result = WinstonSlagleExample.apply(intg)
+    self.assertEqual(isinstance(result, Sum), True)
+    self.assertEqual('asin(x)' in repr(result), True)
+
 
 if __name__ == "__main__":
   unittest.main()

@@ -342,8 +342,8 @@ class Logarithm(Expression):
 
 
 class TrigFunction(Expression):
-  """A trigonometric function (sin, cos, tan, sec, csc, or cot)."""
-  NAMES = set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot'])
+  """A trigonometric or inverse-trigonometric function."""
+  NAMES = set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin'])
 
   def __init__(self, name, arg):
     if name not in self.NAMES:
@@ -358,6 +358,8 @@ class TrigFunction(Expression):
     return "%s(%s)" % (self.name, self.arg)
 
   def latex(self):
+    if self.name == 'asin':
+      return "\\arcsin\\left(%s\\right)" % self.arg.latex()
     return "\\%s\\left(%s\\right)" % (self.name, self.arg.latex())
 
 

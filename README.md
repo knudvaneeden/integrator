@@ -183,3 +183,8 @@ Examples:
     int cos(3*x+2) dx
     int sec(2*x)^2 dx
     int csc(4*x)*cot(4*x) dx
+
+The worked Slagle example discussed by Patrick Winston in MIT 6.034 Lecture 2
+is also supported:
+
+    int 5*x^4/(1-x^2)^(5/2) dx
