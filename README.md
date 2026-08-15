@@ -13,8 +13,10 @@ https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/le
 
 # Prerequisites:
 You must currently use Python version 2.7.18 to have it working out of the box
+
 https://www.python.org/downloads/release/python-2718/
-It will not work out of the box using Python version 3.x thus.
+
+It will currently not work out of the box using Python version 3.x thus.
 
 # Integrator
 This is a symbolic integrator based on James Slagle's 1961 thesis.
