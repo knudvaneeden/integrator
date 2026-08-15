@@ -1,23 +1,3 @@
-# Author
-This program was originally developed by Miles Steele. It solved only the integral of powers of the variable x initially.
-It has now been extended (solely by involving ChatGPT who has supplied all the changes) to be more according the original examples as were solvable by the SAINT program written by James Robert Slagle
-(e.g. trigonometric functions can be integrated).
-
-# Original LISP source of SAINT by James Robert Slagle  
-This LISP 1.5 source code (running on an IBM 7090 mainframe computer with totally 32 kilobytes of memory available) has been lost and is not found anywhere on the Internet.
-
-# You can see a very good explanation of the working of SAINT 
-Professor Patric Winston in his MIT Artificial Intelligence lecture 2.
-
-https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-2-reasoning-goal-trees-and-problem-solving/
-
-# Prerequisites:
-You must currently use Python version 2.7.18 to have it working out of the box
-
-https://www.python.org/downloads/release/python-2718/
-
-It will currently not work out of the box using Python version 3.x thus.
-
 # Integrator
 This is a symbolic integrator based on James Slagle's 1961 thesis.
 The goal of this project is to solve integrals symbolically
@@ -27,8 +7,6 @@ thoughts and methods with you.
 
 ## Demo
 You can try the integrator for yourself [here](http://milessteele.com:5000).
-
-Note: This online option created by Miles Steele earlier is currently not working anymore.
 
 ## Getting Your Hands Dirty
 
@@ -209,4 +187,10 @@ Examples:
 The worked Slagle example discussed by Patrick Winston in MIT 6.034 Lecture 2
 is also supported:
 
-    int 5*x^4/(1-x^2)^(5/2) dx
+    int x^4/(1-x^2)^(5/2) dx
+
+The parser also accepts `sqrt(x)`, `exp(x)`, `log(x)`/`ln(x)`, `asin(x)`,
+and `atan(x)`.  The regression suite includes every distinct integral in
+the user-supplied SAINT screenshots, including the two examples labelled
+as failures there. Historical provenance is kept separate: those labels
+do not agree with the two failures printed on page 72 of Slagle's thesis.

@@ -106,11 +106,37 @@ class TestStrategies(unittest.TestCase):
 
   def test_WinstonSlagleExample(self):
     from parseintg import parse
-    intg = parse('int 5*x^4/(1-x^2)^(5/2) dx')
+    intg = parse('int x^4/(1-x^2)^(5/2) dx')
     self.assertEqual(WinstonSlagleExample.applicable(intg), True)
     result = WinstonSlagleExample.apply(intg)
     self.assertEqual(isinstance(result, Sum), True)
     self.assertEqual('asin(x)' in repr(result), True)
+
+  def test_ScreenshotExamples(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int 1/(1+x^4)^2 dx',
+      'int cos(x)/(1+sin(x)^2)^2 dx',
+      'int x^4/(1-x^2)^(5/2) dx',
+      'int x^2/sqrt(1-x^2) dx',
+      'int x*ln(x) dx',
+      'int tan(x)^5*sec(x)^2 dx',
+      'int exp(2*x)/(1+exp(x)) dx',
+      'int 1/(x*sqrt(1+x^2)) dx',
+      'int sin(x)^2*cos(x)^4 dx',
+      'int 2^x dx',
+      'int 1/(1+x^2) dx',
+      'int 1/sqrt(1-x^2) dx',
+      'int sin(x)^3 dx',
+      'int 1/(x^2-1) dx',
+      'int cos(3*x+5) dx',
+      'int x*sqrt(1+x) dx',
+      'int cos(sqrt(x)) dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
 
 
 if __name__ == "__main__":

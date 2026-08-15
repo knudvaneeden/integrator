@@ -22,7 +22,8 @@ PARENS_FLAT = ['(', ')', '[', ']']
 PARENS_LEFT  = ['(', '[']
 PARENS_RIGHT = [')', ']']
 OPERATORS = ["*", "+", "/", "-","(",")","[","]"]
-FUNCTION_NAMES = ['asin', 'sin', 'cos', 'tan', 'sec', 'csc', 'cot']
+FUNCTION_NAMES = ['sqrt', 'asin', 'atan', 'exp', 'log', 'ln',
+  'sin', 'cos', 'tan', 'sec', 'csc', 'cot']
 
 
 class ParseError(Exception): pass
@@ -199,7 +200,14 @@ def parse_tokens(tokens, vset=None, debug=False):
       if function_index + 1 >= len(tokens) or isinstance(tokens[function_index + 1], str):
         raise ParseError("function '%s' requires a parenthesized argument" %
           tokens[function_index])
-      new_token = TrigFunction(tokens[function_index], tokens[function_index + 1])
+      name = tokens[function_index]
+      arg = tokens[function_index + 1]
+      if name in ['log', 'ln']:
+        new_token = Logarithm(arg)
+      elif name == 'sqrt':
+        new_token = Power(arg, Fraction(Number(1), Number(2)))
+      else:
+        new_token = TrigFunction(name, arg)
       tokens = tokens[:function_index] + [new_token] + tokens[function_index + 2:]
     return tokens
 

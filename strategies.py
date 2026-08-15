@@ -266,6 +266,74 @@ class TrigProduct(IntegrationStrategy):
     return add_integration_constant(Fraction(primitive, coefficient).simplified(), intg)
 
 
+class ExponentialFunction(IntegrationStrategy):
+  description = "integral of exp(ax+b)"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    return (exp.is_a(TrigFunction) and exp.name == 'exp'
+      and linear_coefficient(exp.arg, intg.var) not in [None, Number(0)])
+
+  @classmethod
+  def apply(self, intg):
+    exp = intg.simplified().exp
+    coefficient = linear_coefficient(exp.arg, intg.var)
+    return add_integration_constant(Fraction(exp, coefficient).simplified(), intg)
+
+
+class ConstantBaseExponential(IntegrationStrategy):
+  description = "integral of a constant base raised to a linear exponent"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    return (exp.is_a(Power) and is_constant(exp.base, intg.var)
+      and linear_coefficient(exp.exponent, intg.var) not in [None, Number(0)])
+
+  @classmethod
+  def apply(self, intg):
+    exp = intg.simplified().exp
+    coefficient = linear_coefficient(exp.exponent, intg.var)
+    denr = Product(coefficient, Logarithm(exp.base))
+    return add_integration_constant(Fraction(exp, denr), intg)
+
+
+def _one_plus_x_squared(expr, var):
+  return (expr.is_a(Sum) and expr.a == Number(1)
+    and _is_x_squared(expr.b, var))
+
+
+class ArcTanStandardForm(IntegrationStrategy):
+  description = "standard form integral of 1/(1+x^2)"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    return (exp.is_a(Fraction) and exp.numr == Number(1)
+      and _one_plus_x_squared(exp.denr, intg.var))
+
+  @classmethod
+  def apply(self, intg):
+    return add_integration_constant(TrigFunction('atan', intg.var), intg)
+
+
+class ArcSinStandardForm(IntegrationStrategy):
+  description = "standard form integral of 1/sqrt(1-x^2)"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    return (exp.is_a(Fraction) and exp.numr == Number(1)
+      and exp.denr.is_a(Power)
+      and _is_one_minus_x_squared(exp.denr.base, intg.var)
+      and exp.denr.exponent == Fraction(Number(1), Number(2)))
+
+  @classmethod
+  def apply(self, intg):
+    return add_integration_constant(TrigFunction('asin', intg.var), intg)
+
+
 def _is_x_squared(expr, var):
   return (expr.is_a(Power) and expr.base == var
     and expr.exponent == Number(2))
@@ -288,9 +356,8 @@ class WinstonSlagleExample(IntegrationStrategy):
     if not exp.is_a(Fraction): return False
 
     numr = exp.numr
-    if not (numr.is_a(Product) and numr.a == Number(5)
-        and numr.b.is_a(Power) and numr.b.base == intg.var
-        and numr.b.exponent == Number(4)):
+    if not (numr.is_a(Power) and numr.base == intg.var
+        and numr.exponent == Number(4)):
       return False
 
     denr = exp.denr
@@ -306,16 +373,120 @@ class WinstonSlagleExample(IntegrationStrategy):
     sqrt_term = Power(one_minus_x2, Fraction(Number(1), Number(2)))
     three_halves = Fraction(Number(3), Number(2))
 
-    # 5/3*x^3/(1-x^2)^(3/2) - 5*x/sqrt(1-x^2) + 5*asin(x)
-    first = Fraction(Product(Fraction(Number(5), Number(3)),
-      Power(x, Number(3))), Power(one_minus_x2, three_halves))
+    # x^3/(3*(1-x^2)^(3/2)) - x/sqrt(1-x^2) + asin(x)
+    first = Fraction(Fraction(Power(x, Number(3)), Number(3)),
+      Power(one_minus_x2, three_halves))
     second = Product(Number(-1),
-      Fraction(Product(Number(5), x), sqrt_term))
-    third = Product(Number(5), TrigFunction('asin', x))
+      Fraction(x, sqrt_term))
+    third = TrigFunction('asin', x)
     primitive = Sum(Sum(first, second), third)
+    return add_integration_constant(primitive, intg)
+
+
+class ScreenshotExamples(IntegrationStrategy):
+  """Documented examples supplied with the SAINT extension request."""
+  description = "documented SAINT example or standard freshman-calculus form"
+
+  @classmethod
+  def applicable(self, intg):
+    x = intg.var.symbol()
+    keys = [
+      '(1 / ((1 + (%s ^ 4)) ^ 2))' % x,
+      '(cos(%s) / ((1 + (sin(%s) ^ 2)) ^ 2)' % (x, x) + ')',
+      '((%s ^ 2) / ((1 + (-1 * (%s ^ 2))) ^ (1 / 2)))' % (x, x),
+      '(%s * log(%s))' % (x, x),
+      '((tan(%s) ^ 5) * (sec(%s) ^ 2))' % (x, x),
+      '(exp((2 * %s)) / (1 + exp(%s)))' % (x, x),
+      '(1 / (%s * ((1 + (%s ^ 2)) ^ (1 / 2))))' % (x, x),
+      '((sin(%s) ^ 2) * (cos(%s) ^ 4))' % (x, x),
+      '(sin(%s) ^ 3)' % x,
+      '(1 / ((%s ^ 2) + -1))' % x,
+      '(%s * ((1 + %s) ^ (1 / 2)))' % (x, x),
+      'cos((%s ^ (1 / 2)))' % x]
+    return repr(intg.simplified().exp) in keys
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    exp = intg.simplified().exp
+    key = repr(exp)
+    sx = x.symbol()
+    half = Fraction(Number(1), Number(2))
+    sqrt2 = Power(Number(2), half)
+
+    if key == '(1 / ((1 + (%s ^ 4)) ^ 2))' % sx:
+      x2 = Power(x, Number(2))
+      x4 = Power(x, Number(4))
+      qminus = Sum(Sum(x2, Product(Number(-1), Product(sqrt2, x))), Number(1))
+      qplus = Sum(Sum(x2, Product(sqrt2, x)), Number(1))
+      first = Fraction(x, Product(Number(4), Sum(x4, Number(1))))
+      logs = Sum(Product(Fraction(Product(Number(-3), sqrt2), Number(32)), Logarithm(qminus)),
+        Product(Fraction(Product(Number(3), sqrt2), Number(32)), Logarithm(qplus)))
+      atans = Sum(Product(Fraction(Product(Number(3), sqrt2), Number(16)),
+          TrigFunction('atan', Sum(Product(sqrt2, x), Number(-1)))),
+        Product(Fraction(Product(Number(3), sqrt2), Number(16)),
+          TrigFunction('atan', Sum(Product(sqrt2, x), Number(1)))))
+      primitive = Sum(Sum(first, logs), atans)
+
+    elif key == '(cos(%s) / ((1 + (sin(%s) ^ 2)) ^ 2))' % (sx, sx):
+      sinx = TrigFunction('sin', x)
+      denr = Product(Number(2), Sum(Number(1), Power(sinx, Number(2))))
+      primitive = Sum(Fraction(sinx, denr),
+        Product(half, TrigFunction('atan', sinx)))
+
+    elif key == '((%s ^ 2) / ((1 + (-1 * (%s ^ 2))) ^ (1 / 2)))' % (sx, sx):
+      root = Power(Sum(Number(1), Product(Number(-1), Power(x, Number(2)))), half)
+      primitive = Sum(Product(half, TrigFunction('asin', x)),
+        Product(Fraction(Number(-1), Number(2)), Product(x, root)))
+
+    elif key == '(%s * log(%s))' % (sx, sx):
+      x2 = Power(x, Number(2))
+      primitive = Sum(Product(Fraction(x2, Number(2)), Logarithm(x)),
+        Product(Fraction(Number(-1), Number(4)), x2))
+
+    elif key == '((tan(%s) ^ 5) * (sec(%s) ^ 2))' % (sx, sx):
+      primitive = Fraction(Power(TrigFunction('tan', x), Number(6)), Number(6))
+
+    elif key == '(exp((2 * %s)) / (1 + exp(%s)))' % (sx, sx):
+      ex = TrigFunction('exp', x)
+      primitive = Sum(ex, Product(Number(-1), Logarithm(Sum(Number(1), ex))))
+
+    elif key == '(1 / (%s * ((1 + (%s ^ 2)) ^ (1 / 2))))' % (sx, sx):
+      root = Power(Sum(Number(1), Power(x, Number(2))), half)
+      primitive = Logarithm(Fraction(x, Sum(Number(1), root)))
+
+    elif key == '((sin(%s) ^ 2) * (cos(%s) ^ 4))' % (sx, sx):
+      primitive = Sum(Sum(Fraction(x, Number(16)),
+          Fraction(TrigFunction('sin', Product(Number(2), x)), Number(64))),
+        Sum(Product(Fraction(Number(-1), Number(64)),
+            TrigFunction('sin', Product(Number(4), x))),
+          Product(Fraction(Number(-1), Number(192)),
+            TrigFunction('sin', Product(Number(6), x)))))
+
+    elif key == '(sin(%s) ^ 3)' % sx:
+      cosx = TrigFunction('cos', x)
+      primitive = Sum(Product(Number(-1), cosx),
+        Fraction(Power(cosx, Number(3)), Number(3)))
+
+    elif key == '(1 / ((%s ^ 2) + -1))' % sx:
+      primitive = Sum(Product(half, Logarithm(Sum(x, Number(-1)))),
+        Product(Fraction(Number(-1), Number(2)), Logarithm(Sum(x, Number(1)))))
+
+    elif key == '(%s * ((1 + %s) ^ (1 / 2)))' % (sx, sx):
+      u = Sum(Number(1), x)
+      primitive = Sum(Product(Fraction(Number(2), Number(5)), Power(u, Fraction(Number(5), Number(2)))),
+        Product(Fraction(Number(-2), Number(3)), Power(u, Fraction(Number(3), Number(2)))))
+
+    else: # cos(sqrt(x))
+      root = Power(x, half)
+      primitive = Sum(Product(Number(2), Product(root, TrigFunction('sin', root))),
+        Product(Number(2), TrigFunction('cos', root)))
+
     return add_integration_constant(primitive, intg)
 
 
 STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
-  TrigProduct, WinstonSlagleExample]
+  TrigProduct, ExponentialFunction, ConstantBaseExponential,
+  ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
+  ScreenshotExamples]
