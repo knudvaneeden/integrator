@@ -8,6 +8,7 @@ This LISP 1.5 source code (running on an IBM 7090 mainframe computer with totall
 
 # You can see a very good explanation of the working of SAINT 
 Professor Patric Winston in his MIT Artificial Intelligence lecture 2.
+
 https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-2-reasoning-goal-trees-and-problem-solving/
 
 # Prerequisites:
