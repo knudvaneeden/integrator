@@ -3,7 +3,13 @@ This program was originally developed by Miles Steele. It solved only the integr
 It has now been extended (solely by involving ChatGPT who has supplied all the changes) to be more according the original examples as were solvable by the SAINT program written by James Robert Slagle
 (e.g. trigonometric functions can be integrated).
 
-# Original LISP source of SAINT by James Robert Slagle has been lost and is not found anywhere.
+# Original LISP source of SAINT by James Robert Slagle 
+This source LISP 1.5 source code (running on an IBM 7090 mainframe computer) has been lost and is not found anywhere on the Internet.
+It was running in the 32 kilobytes of memory totally available on that mainframe computer.
+
+# You can see a very good explanation of the working of SAINT 
+Professor Patric Winston in his MIT Artificial Intelligence lecture 2.
+https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-2-reasoning-goal-trees-and-problem-solving/
 
 # Prerequisites:
 You must currently use Python version 2.7.18 to have it working out of the box
