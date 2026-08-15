@@ -341,6 +341,26 @@ class Logarithm(Expression):
       return "log_{%s}{%s}" %(self.arg.latex(), self.base.latex())
 
 
+class TrigFunction(Expression):
+  """A trigonometric function (sin, cos, tan, sec, csc, or cot)."""
+  NAMES = set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot'])
+
+  def __init__(self, name, arg):
+    if name not in self.NAMES:
+      raise ValueError("unknown trigonometric function '%s'" % name)
+    self.name = name
+    self.arg = arg
+
+  def simplified(self):
+    return TrigFunction(self.name, self.arg.simplified())
+
+  def __repr__(self):
+    return "%s(%s)" % (self.name, self.arg)
+
+  def latex(self):
+    return "\\%s\\left(%s\\right)" % (self.name, self.arg.latex())
+
+
 class Integral(Expression):
   """
   An expression represent a single integral.

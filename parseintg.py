@@ -22,6 +22,7 @@ PARENS_FLAT = ['(', ')', '[', ']']
 PARENS_LEFT  = ['(', '[']
 PARENS_RIGHT = [')', ']']
 OPERATORS = ["*", "+", "/", "-","(",")","[","]"]
+FUNCTION_NAMES = ['sin', 'cos', 'tan', 'sec', 'csc', 'cot']
 
 
 class ParseError(Exception): pass
@@ -38,6 +39,17 @@ def tokenize(s):
   # process chars into tokens
   while len(character_stream) > 0:
     char = character_stream[0]
+
+    # Recognize function names before their letters can become variables.
+    function_name = next((name for name in FUNCTION_NAMES
+      if character_stream[0:len(name)] == list(name)), None)
+    if function_name != None:
+      if (tokens[-1] in VariableSet.SYMBOLS or _isnum(tokens[-1])
+          or tokens[-1] in PARENS_RIGHT):
+        tokens.append('*')
+      tokens.append(function_name)
+      character_stream = character_stream[len(function_name):]
+      continue
 
     # recue integrals starts
     #WARN: this section advances on its own and then continues to a
@@ -179,6 +191,18 @@ def parse_tokens(tokens, vset=None, debug=False):
 
     return tokens
 
+  def scan_functions(tokens):
+    """Combine a function token and its already-parsed parenthesized argument."""
+    while len(set(FUNCTION_NAMES).intersection(set(tokens))) > 0:
+      function_index = (i for i,v in enumerate(tokens)
+        if v in FUNCTION_NAMES).next()
+      if function_index + 1 >= len(tokens) or isinstance(tokens[function_index + 1], str):
+        raise ParseError("function '%s' requires a parenthesized argument" %
+          tokens[function_index])
+      new_token = TrigFunction(tokens[function_index], tokens[function_index + 1])
+      tokens = tokens[:function_index] + [new_token] + tokens[function_index + 2:]
+    return tokens
+
   # # # #
 
   if debug: print "parsing tokens: %s" % str(tokens)
@@ -210,6 +234,10 @@ def parse_tokens(tokens, vset=None, debug=False):
   # parens
   if debug: print "    parsing parens"
   tokens = scan_groups(tokens, vset, '(', ')')
+
+  # named functions (their parenthesized arguments have now been parsed)
+  if debug: print "    parsing functions"
+  tokens = scan_functions(tokens)
 
   # power
   if debug: print "    parsing powers"

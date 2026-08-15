@@ -169,3 +169,17 @@ def applicable(self, intg):
 
 Applying these strategies as they become applicable
 will solve a surprising number of integrals.
+
+## Trigonometric functions
+
+This version also recognizes `sin`, `cos`, `tan`, `sec`, `csc`, and `cot`.
+Function arguments must be parenthesized. It integrates the six basic
+functions when their argument is linear in the integration variable, as well
+as `sec(u)^2`, `csc(u)^2`, `sec(u)*tan(u)`, and `csc(u)*cot(u)`.
+
+Examples:
+
+    int sin(x) dx
+    int cos(3*x+2) dx
+    int sec(2*x)^2 dx
+    int csc(4*x)*cot(4*x) dx

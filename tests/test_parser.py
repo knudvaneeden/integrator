@@ -1,6 +1,7 @@
 import unittest
 
-from parseintg import tokenize
+from parseintg import tokenize, parse
+from elements import TrigFunction, Integral
 
 class TestElements(unittest.TestCase):
   def test_tokenize(self):
@@ -34,6 +35,15 @@ class TestElements(unittest.TestCase):
 
     self.assertEqual(tokenize('int (2) + 3x * 8 dx'), ['int', '(', '2', ')', '+', '3', '*', 'x', '*', '8', 'dx'])
     self.assertEqual(tokenize('int (2) + 3w * 8 dz'), ['int', '(', '2', ')', '+', '3', '*', 'w', '*', '8', 'dz'])
+
+    self.assertEqual(tokenize('sin(x)'), ['sin', '(', 'x', ')'])
+    self.assertEqual(tokenize('2cos(3*x+1)'), ['2', '*', 'cos', '(', '3', '*', 'x', '+', '1', ')'])
+
+  def test_trig_parser(self):
+    parsed = parse('int sin(3*x+2) dx')
+    self.assertEqual(isinstance(parsed, Integral), True)
+    self.assertEqual(isinstance(parsed.exp, TrigFunction), True)
+    self.assertEqual(parsed.exp.name, 'sin')
 
   def test_parser(self):
     self.assertEqual('NO', 'TESTS')

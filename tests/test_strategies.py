@@ -5,6 +5,12 @@ from strategies import *
 
 class TestStrategies(unittest.TestCase):
 
+  def _trig_integral(self, name, coefficient=1):
+    vset = VariableSet()
+    var = vset.variable('x')
+    arg = var if coefficient == 1 else Product(Number(coefficient), var)
+    return Integral(TrigFunction(name, arg), var)
+
   def test_IntegrationStrategy(self):
     try:
       IntegrationStrategy()
@@ -76,6 +82,27 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(res.a.a.denr, 3)
     self.assertEqual(res.a.b.base, var)
     self.assertEqual(res.a.b.exponent.n, 3)
+
+  def test_SimpleTrig(self):
+    intg = self._trig_integral('sin', 3)
+    self.assertEqual(SimpleTrig.applicable(intg), True)
+    res = SimpleTrig.apply(intg)
+    self.assertEqual(isinstance(res.a, Fraction), True)
+    self.assertEqual(res.a.denr, Number(3))
+
+    intg = self._trig_integral('cos')
+    self.assertEqual(SimpleTrig.applicable(intg), True)
+    self.assertEqual(SimpleTrig.apply(intg).a, TrigFunction('sin', intg.var))
+
+  def test_TrigSquare(self):
+    intg = self._trig_integral('sec', 2)
+    intg.exp = Power(intg.exp, Number(2))
+    self.assertEqual(TrigSquare.applicable(intg), True)
+
+  def test_TrigProduct(self):
+    intg = self._trig_integral('sec', 4)
+    intg.exp = Product(intg.exp, TrigFunction('tan', intg.exp.arg))
+    self.assertEqual(TrigProduct.applicable(intg), True)
 
 
 if __name__ == "__main__":

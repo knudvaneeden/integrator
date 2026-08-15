@@ -27,8 +27,36 @@ def is_constant(expr, var) :
     return is_constant(expr.a, var) and is_constant(expr.b, var)
   elif expr.is_a(Fraction):
     return is_constant(expr.numr, var) and is_constant(expr.denr, var)
+  elif expr.is_a(Power):
+    return is_constant(expr.base, var) and is_constant(expr.exponent, var)
+  elif expr.is_a(Logarithm) or expr.is_a(TrigFunction):
+    return is_constant(expr.arg, var)
   else :
     return False
+
+
+def linear_coefficient(expr, var):
+  """Return d(expr)/d(var) when it is constant, otherwise return None."""
+  if is_constant(expr, var):
+    return Number(0)
+  if expr == var:
+    return Number(1)
+  if expr.is_a(Sum):
+    a = linear_coefficient(expr.a, var)
+    b = linear_coefficient(expr.b, var)
+    if a != None and b != None:
+      return Sum(a, b).simplified()
+  if expr.is_a(Product):
+    if is_constant(expr.a, var):
+      b = linear_coefficient(expr.b, var)
+      if b != None: return Product(expr.a, b).simplified()
+    if is_constant(expr.b, var):
+      a = linear_coefficient(expr.a, var)
+      if a != None: return Product(a, expr.b).simplified()
+  if expr.is_a(Fraction) and is_constant(expr.denr, var):
+    numr = linear_coefficient(expr.numr, var)
+    if numr != None: return Fraction(numr, expr.denr).simplified()
+  return None
 
 
 class IntegrationStrategy(object):
@@ -156,4 +184,86 @@ class OneOverX(IntegrationStrategy):
     return Product(intg.simplified().exp.numr, Logarithm(intg.var))
 
 
-STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral, ConstantPower, DistributeAddition, OneOverX]
+class SimpleTrig(IntegrationStrategy):
+  example = "int sin(3*x+2) dx = -cos(3*x+2)/3 + C"
+  description = "standard trigonometric integral with a linear argument"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(TrigFunction): return False
+    coefficient = linear_coefficient(exp.arg, intg.var)
+    return coefficient != None and coefficient != Number(0)
+
+  @classmethod
+  def apply(self, intg):
+    exp = intg.simplified().exp
+    coefficient = linear_coefficient(exp.arg, intg.var)
+    if exp.name == 'sin':
+      primitive = Product(Number(-1), TrigFunction('cos', exp.arg))
+    elif exp.name == 'cos':
+      primitive = TrigFunction('sin', exp.arg)
+    elif exp.name == 'tan':
+      primitive = Product(Number(-1), Logarithm(TrigFunction('cos', exp.arg)))
+    elif exp.name == 'cot':
+      primitive = Logarithm(TrigFunction('sin', exp.arg))
+    elif exp.name == 'sec':
+      primitive = Logarithm(Sum(TrigFunction('sec', exp.arg),
+        TrigFunction('tan', exp.arg)))
+    else: # csc
+      primitive = Product(Number(-1), Logarithm(Sum(TrigFunction('csc', exp.arg),
+        TrigFunction('cot', exp.arg))))
+    return add_integration_constant(Fraction(primitive, coefficient).simplified(), intg)
+
+
+class TrigSquare(IntegrationStrategy):
+  description = "integral of secant squared or cosecant squared"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    return (exp.is_a(Power) and exp.exponent == Number(2)
+      and exp.base.is_a(TrigFunction) and exp.base.name in ['sec', 'csc']
+      and linear_coefficient(exp.base.arg, intg.var) not in [None, Number(0)])
+
+  @classmethod
+  def apply(self, intg):
+    trig = intg.simplified().exp.base
+    coefficient = linear_coefficient(trig.arg, intg.var)
+    if trig.name == 'sec':
+      primitive = TrigFunction('tan', trig.arg)
+    else:
+      primitive = Product(Number(-1), TrigFunction('cot', trig.arg))
+    return add_integration_constant(Fraction(primitive, coefficient).simplified(), intg)
+
+
+class TrigProduct(IntegrationStrategy):
+  description = "integral of sec(u)tan(u) or csc(u)cot(u)"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return False
+    pairs = [(exp.a, exp.b), (exp.b, exp.a)]
+    for a, b in pairs:
+      if (a.is_a(TrigFunction) and b.is_a(TrigFunction)
+          and a.arg == b.arg and ((a.name, b.name) in
+          [('sec', 'tan'), ('csc', 'cot')])):
+        coefficient = linear_coefficient(a.arg, intg.var)
+        if coefficient not in [None, Number(0)]: return True
+    return False
+
+  @classmethod
+  def apply(self, intg):
+    exp = intg.simplified().exp
+    a, b = exp.a, exp.b
+    if a.name not in ['sec', 'csc']: a, b = b, a
+    coefficient = linear_coefficient(a.arg, intg.var)
+    primitive = TrigFunction(a.name, a.arg)
+    if a.name == 'csc': primitive = Product(Number(-1), primitive)
+    return add_integration_constant(Fraction(primitive, coefficient).simplified(), intg)
+
+
+STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
+  ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
+  TrigProduct]
