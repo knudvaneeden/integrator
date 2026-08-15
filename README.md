@@ -1,4 +1,4 @@
-# Prerequisits:
+# Prerequisites:
 
 You must currently use Python 2.7.18 to have it working out of the box
 https://www.python.org/downloads/release/python-2718/
