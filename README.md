@@ -1,5 +1,9 @@
-# Prerequisites:
+#Author
+This program was originally developed by Miles Steele. It solved only the integral of powers of the variable x initially.
+It has now been extended to be more according the original examples as were solvable by the SAINT program written by James Robert Slagle
+(e.g. trigonometric functions can be integrated).
 
+# Prerequisites:
 You must currently use Python version 2.7.18 to have it working out of the box
 https://www.python.org/downloads/release/python-2718/
 It will not work out of the box using Python version 3.x thus.
