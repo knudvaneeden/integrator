@@ -1,3 +1,8 @@
+# Prerequisits:
+
+You must currently use Python 2.7.18 to have it working out of the box
+https://www.python.org/downloads/release/python-2718/
+
 # Integrator
 This is a symbolic integrator based on James Slagle's 1961 thesis.
 The goal of this project is to solve integrals symbolically
