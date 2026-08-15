@@ -1,7 +1,8 @@
 # Prerequisites:
 
-You must currently use Python 2.7.18 to have it working out of the box
+You must currently use Python version 2.7.18 to have it working out of the box
 https://www.python.org/downloads/release/python-2718/
+It will not work out of the box using Python version 3.x thus.
 
 # Integrator
 This is a symbolic integrator based on James Slagle's 1961 thesis.
