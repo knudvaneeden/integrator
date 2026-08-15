@@ -3,7 +3,7 @@ This program was originally developed by Miles Steele. It solved only the integr
 It has now been extended (solely by involving ChatGPT who has supplied all the changes) to be more according the original examples as were solvable by the SAINT program written by James Robert Slagle
 (e.g. trigonometric functions can be integrated).
 
-# Original LISP source of SAINT by James Robert Slagle 
+# Original LISP source of SAINT by James Robert Slagle  
 This LISP 1.5 source code (running on an IBM 7090 mainframe computer with totally 32 kilobytes of memory available) has been lost and is not found anywhere on the Internet.
 
 # You can see a very good explanation of the working of SAINT 
