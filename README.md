@@ -4,8 +4,7 @@ It has now been extended (solely by involving ChatGPT who has supplied all the c
 (e.g. trigonometric functions can be integrated).
 
 # Original LISP source of SAINT by James Robert Slagle 
-This source LISP 1.5 source code (running on an IBM 7090 mainframe computer) has been lost and is not found anywhere on the Internet.
-It was running in the 32 kilobytes of memory totally available on that mainframe computer.
+This LISP 1.5 source code (running on an IBM 7090 mainframe computer with totally 32 kilobytes of memory available) has been lost and is not found anywhere on the Internet.
 
 # You can see a very good explanation of the working of SAINT 
 Professor Patric Winston in his MIT Artificial Intelligence lecture 2.
