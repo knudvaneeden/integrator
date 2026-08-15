@@ -1,4 +1,4 @@
-#Author
+# Author
 This program was originally developed by Miles Steele. It solved only the integral of powers of the variable x initially.
 It has now been extended to be more according the original examples as were solvable by the SAINT program written by James Robert Slagle
 (e.g. trigonometric functions can be integrated).
