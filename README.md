@@ -28,6 +28,8 @@ thoughts and methods with you.
 ## Demo
 You can try the integrator for yourself [here](http://milessteele.com:5000).
 
+Note: This online option created by Miles Steele earlier is currently not working anymore.
+
 ## Getting Your Hands Dirty
 
 After playing with the integrator, you might
