@@ -48,6 +48,8 @@ class TestElements(unittest.TestCase):
     self.assertEqual(repr(parse('ln(x)')), 'ln(x)')
     self.assertEqual(repr(parse('log(x)')), 'log(x)')
     self.assertEqual(parse('arccos(x)').name, 'arccos')
+    self.assertEqual(repr(parse('(1-x^2)^(-1/2)')),
+      '((1 + (-1 * (x ^ 2))) ^ ((-1 * 1) / 2))')
 
   def test_parser(self):
     parsed = parse('int x^2 dx')

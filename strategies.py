@@ -357,6 +357,147 @@ class CosOverOneMinusSinSquared(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class SecSquaredRationalTangent(IntegrationStrategy):
+  """Solve sec(u)^2/(1+sec(u)^2-3*tan(u)) by substitution."""
+  description = "substitution u=tan(x) followed by partial fractions"
+
+  @classmethod
+  def _argument(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or not exp.numr.is_a(Power)
+        or exp.numr.exponent != Number(2)
+        or not exp.numr.base.is_a(TrigFunction)
+        or exp.numr.base.name != 'sec'):
+      return None
+    arg = exp.numr.base.arg
+    sec2 = Power(TrigFunction('sec', arg), Number(2))
+    tanx = TrigFunction('tan', arg)
+    expected = Sum(Sum(Number(1), sec2),
+      Product(Number(-1), Product(Number(3), tanx)))
+    if exp.denr != expected: return None
+    coefficient = linear_coefficient(arg, intg.var)
+    if coefficient in [None, Number(0)]: return None
+    return arg, coefficient
+
+  @classmethod
+  def applicable(self, intg):
+    return self._argument(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    arg, coefficient = self._argument(intg)
+    tanx = TrigFunction('tan', arg)
+    primitive = Sum(Logarithm(Sum(tanx, Number(-2))),
+      Product(Number(-1), Logarithm(Sum(tanx, Number(-1)))))
+    primitive = Fraction(primitive, coefficient).simplified()
+    return add_integration_constant(primitive, intg)
+
+
+class ReciprocalSecSquared(IntegrationStrategy):
+  """Rewrite 1/sec(u)^2 as cos(u)^2 and integrate its half-angle form."""
+  description = "half-angle identity for reciprocal secant squared"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or exp.numr != Number(1)
+        or not exp.denr.is_a(Power)
+        or exp.denr.exponent != Number(2)
+        or not exp.denr.base.is_a(TrigFunction)
+        or exp.denr.base.name != 'sec'):
+      return None
+    arg = exp.denr.base.arg
+    coefficient = linear_coefficient(arg, intg.var)
+    if coefficient in [None, Number(0)]: return None
+    return arg, coefficient
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    arg, coefficient = self._parts(intg)
+    first = Fraction(arg, Product(Number(2), coefficient)).simplified()
+    second = Fraction(TrigFunction('sin', Product(Number(2), arg)),
+      Product(Number(4), coefficient)).simplified()
+    return add_integration_constant(Sum(first, second), intg)
+
+
+class LinearOverQuadraticRoot(IntegrationStrategy):
+  """Solve x/sqrt(x^2+2x+5) by completing the square."""
+  description = "complete the square and split the numerator"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    quadratic = Sum(Sum(Power(x, Number(2)), Product(Number(2), x)),
+      Number(5))
+    return (exp.is_a(Fraction) and exp.numr == x
+      and exp.denr == Power(quadratic, Fraction(Number(1), Number(2))))
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    quadratic = Sum(Sum(Power(x, Number(2)), Product(Number(2), x)),
+      Number(5))
+    root = Power(quadratic, Fraction(Number(1), Number(2)))
+    logarithm = Logarithm(Sum(Sum(x, Number(1)), root))
+    primitive = Sum(root, Product(Number(-1), logarithm))
+    return add_integration_constant(primitive, intg)
+
+
+class ExponentialQuotientDerivative(IntegrationStrategy):
+  """Recognize the derivative of exp(x)/(1+x)."""
+  description = "reverse quotient rule for exp(x)/(1+x)"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    expected_numr = Product(x, TrigFunction('exp', x))
+    expected_denr = Power(Sum(Number(1), x), Number(2))
+    return (exp.is_a(Fraction) and exp.numr == expected_numr
+      and exp.denr == expected_denr)
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    primitive = Fraction(TrigFunction('exp', x), Sum(Number(1), x))
+    return add_integration_constant(primitive, intg)
+
+
+class CompositeSquareSubstitution(IntegrationStrategy):
+  """Recognize f(x)^2*f'(x) for f=arcsin(x)+sin(x)."""
+  description = "substitution u=arcsin(x)+sin(x)"
+
+  @classmethod
+  def _base(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    base = Sum(TrigFunction('arcsin', x), TrigFunction('sin', x))
+    one_minus_x2 = Sum(Number(1),
+      Product(Number(-1), Power(x, Number(2))))
+    derivative = Sum(Power(one_minus_x2,
+      Fraction(Number(-1), Number(2))), TrigFunction('cos', x))
+    if (exp.is_a(Product) and exp.a == Power(base, Number(2))
+        and exp.b == derivative):
+      return base
+    return None
+
+  @classmethod
+  def applicable(self, intg):
+    return self._base(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    base = self._base(intg)
+    primitive = Product(Fraction(Number(1), Number(3)),
+      Power(base, Number(3)))
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -644,5 +785,8 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, ExponentialFunction, ConstantBaseExponential,
   ExpQuadraticSubstitution, CosOverOneMinusSinSquared,
+  SecSquaredRationalTangent, ReciprocalSecSquared,
+  LinearOverQuadraticRoot, ExponentialQuotientDerivative,
+  CompositeSquareSubstitution,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

@@ -174,6 +174,64 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(repr(result),
       '((1 / (3 * (1 + (-1 * sin((3 * x)))))) + C)')
 
+  def test_ConstantPlusCosine(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 2 + cos( x ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+
+  def test_SecSquaredRationalTangent(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int sec(x)^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '((ln((tan(x) + -2)) + (-1 * ln((tan(x) + -1)))) + C)')
+
+  def test_ReciprocalSecSquared(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 1 / sec( x )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((x / 2) + (sin((2 * x)) / 4)) + C)')
+
+  def test_LinearOverQuadraticRoot(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int x / sqrt( x^2 + 2 * x + 5 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '((((((x ^ 2) + (2 * x)) + 5) ^ (1 / 2)) + (-1 * ln(((x + 1) + ((((x ^ 2) + (2 * x)) + 5) ^ (1 / 2)))))) + C)')
+
+  def test_ExponentialQuotientDerivative(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int x * exp( x ) / ( 1 + x )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '((exp(x) / (1 + x)) + C)')
+
+  def test_CompositeSquareSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = ('int (arcsin(x) + sin(x))^2 * '
+      '((1 - x^2)^(-1/2) + cos(x)) dx')
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((1 / 3) * ((arcsin(x) + sin(x)) ^ 3)) + C)')
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph

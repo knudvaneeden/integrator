@@ -116,6 +116,17 @@ def tokenize(s):
 def parse_tokens(tokens, vset=None, debug=False):
   zip3 = lambda l: list(zip(l, l[1:], l[2:]))
 
+  # Represent unary minus as multiplication by -1.  This permits inputs such
+  # as x^(-1/2) while retaining the existing binary-subtraction parser.
+  normalized_tokens = []
+  for token in tokens:
+    if (token == '-' and (len(normalized_tokens) == 0
+        or normalized_tokens[-1] in BIN_OPS + PARENS_LEFT)):
+      normalized_tokens.extend([Number(-1), '*'])
+    else:
+      normalized_tokens.append(token)
+  tokens = normalized_tokens
+
   # scan left to right and apply binary expressions
   def scan_binops(tokens, binops):
     # while there are operators in tokens
