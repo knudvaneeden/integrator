@@ -324,6 +324,39 @@ class ExpQuadraticSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class CosOverOneMinusSinSquared(IntegrationStrategy):
+  """Solve cos(ax+b)/(1-sin(ax+b))^2 by substitution."""
+  description = "substitution u=1-sin(ax+b)"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or not exp.numr.is_a(TrigFunction)
+        or exp.numr.name != 'cos' or not exp.denr.is_a(Power)
+        or exp.denr.exponent != Number(2)):
+      return None
+    inner = exp.denr.base
+    if (not inner.is_a(Sum) or inner.a != Number(1)
+        or not inner.b.is_a(Product) or inner.b.a != Number(-1)
+        or not inner.b.b.is_a(TrigFunction)
+        or inner.b.b.name != 'sin'
+        or inner.b.b.arg != exp.numr.arg):
+      return None
+    coefficient = linear_coefficient(exp.numr.arg, intg.var)
+    if coefficient in [None, Number(0)]: return None
+    return inner, coefficient
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    inner, coefficient = self._parts(intg)
+    primitive = Fraction(Number(1), Product(coefficient, inner))
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -610,6 +643,6 @@ class VersionFiveExamples(IntegrationStrategy):
 STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, ExponentialFunction, ConstantBaseExponential,
-  ExpQuadraticSubstitution,
+  ExpQuadraticSubstitution, CosOverOneMinusSinSquared,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

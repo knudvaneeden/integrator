@@ -164,6 +164,16 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('int[' in repr(result), False)
     self.assertEqual(repr(result), '(((1 / 2) * exp((x ^ 2))) + C)')
 
+  def test_CosOverOneMinusSinSquared(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int cos( 3 * x ) / ( 1 - sin( 3 * x ))^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '((1 / (3 * (1 + (-1 * sin((3 * x)))))) + C)')
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph

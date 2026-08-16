@@ -1,5 +1,8 @@
 Solved:
 
+    int x dx
+    int x + x^2 dx
+    int cos( 3 * x ) / ( 1 - sin( 3 * x ))^2 dx
     int x^4 / ( 1 - x^2 )^( 5 / 2 ) dx
     int tan(x)^5 * sec(x)^2 dx
     int 1 / (1 + x^4)^2 dx
