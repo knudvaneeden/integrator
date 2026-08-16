@@ -755,19 +755,24 @@ class TestStrategies(unittest.TestCase):
     problems = [
       'int sin( x )^3 * cos( x )^3 dx',
       'int sin( x )^(1/3) * cos( x )^3 dx',
+      'int sin( x )^(1/3) * cos( x )^3 * tan( x )^2 dx',
       'int sin( 2 * x + 1 )^(2/3) * cos( 2 * x + 1 )^5 dx',
-      'int sin( 3 * x - 2 )^5 * cos( 3 * x - 2 )^(4/3) dx']
+      'int sin( 3 * x - 2 )^5 * cos( 3 * x - 2 )^(4/3) dx',
+      'int sin( 2 * x + 1 )^(2/5) * cos( 2 * x + 1 )^5 * tan( 2 * x + 1 )^2 dx',
+      'int sin( 3 * x - 2 )^5 * cos( 3 * x - 2 )^(1/2) * tan( 3 * x - 2 )^2 dx']
     for problem in problems:
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
 
     first = attempt_integral(parse(problems[0]), SubLogger('test'))
     second = attempt_integral(parse(problems[1]), SubLogger('test'))
+    third = attempt_integral(parse(problems[2]), SubLogger('test'))
     self.assertEqual(repr(first),
       '((((sin(x) ^ 4) / 4) + (-1 * ((sin(x) ^ 6) / 6))) + C)')
     self.assertEqual(repr(second),
       '((((3 * (sin(x) ^ (4 / 3))) / 4) + '
       '((-3 * (sin(x) ^ (10 / 3))) / 10)) + C)')
+    self.assertEqual(repr(third), '(((3 * (sin(x) ^ (10 / 3))) / 10) + C)')
 
   def test_SecantPowerIntegerAndSymbolic(self):
     from parseintg import parse

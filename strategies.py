@@ -1176,12 +1176,12 @@ def _rational_trig_square(expr):
   return None
 
 
-def _sine_or_cosine_power(expr):
-  """Return (name, phase, rational exponent) for sin(phase)^p or cos(phase)^p."""
-  if expr.is_a(TrigFunction) and expr.name in ['sin', 'cos']:
+def _sine_cosine_or_tangent_power(expr):
+  """Return (name, phase, rational exponent) for a trigonometric power."""
+  if expr.is_a(TrigFunction) and expr.name in ['sin', 'cos', 'tan']:
     return expr.name, expr.arg, Rational(1)
   if (expr.is_a(Power) and expr.base.is_a(TrigFunction)
-      and expr.base.name in ['sin', 'cos']):
+      and expr.base.name in ['sin', 'cos', 'tan']):
     exponent = _rational_value(expr.exponent)
     if exponent != None:
       return expr.base.name, expr.base.arg, exponent
@@ -1189,38 +1189,55 @@ def _sine_or_cosine_power(expr):
 
 
 class OddSineCosinePowerSubstitution(IntegrationStrategy):
-  """Integrate sin(u)^p*cos(u)^q when p or q is a positive odd integer."""
-  description = ("odd sine/cosine power substitution with a rational "
-    "remaining exponent")
+  """Integrate rational powers of sin, cos and tan after power normalization."""
+  description = ("normalize tangent powers, then use an odd sine/cosine "
+    "power substitution")
 
   @classmethod
   def _parts(self, intg):
     exp = intg.simplified().exp
     if not exp.is_a(Product): return None
-    first = _sine_or_cosine_power(exp.a)
-    second = _sine_or_cosine_power(exp.b)
-    if first == None or second == None: return None
-    powers = {first[0]: first, second[0]: second}
-    if set(powers.keys()) != set(['sin', 'cos']): return None
-    sine, cosine = powers['sin'], powers['cos']
-    if sine[1] != cosine[1]: return None
-    phase = _laurent_polynomial_coefficients(sine[1], intg.var)
+    factors = []
+
+    def collect(item):
+      if item.is_a(Product):
+        collect(item.a)
+        collect(item.b)
+      else:
+        factors.append(item)
+
+    collect(exp)
+    powers = {'sin': Rational(0), 'cos': Rational(0), 'tan': Rational(0)}
+    phase_expression = None
+    for factor in factors:
+      trig_power = _sine_cosine_or_tangent_power(factor)
+      if trig_power == None: return None
+      name, factor_phase, exponent = trig_power
+      if phase_expression == None: phase_expression = factor_phase
+      elif phase_expression != factor_phase: return None
+      powers[name] += exponent
+    if phase_expression == None: return None
+
+    # tan(u)^r = sin(u)^r / cos(u)^r.
+    sine_exponent = powers['sin'] + powers['tan']
+    cosine_exponent = powers['cos'] - powers['tan']
+    phase = _laurent_polynomial_coefficients(phase_expression, intg.var)
     if phase == None or any(degree < 0 or degree > 1 for degree in phase):
       return None
     frequency = phase.get(1, Rational(0))
     if frequency == 0: return None
 
-    sine_odd = (sine[2].denominator == 1 and sine[2] > 0
-      and sine[2].numerator % 2 == 1)
-    cosine_odd = (cosine[2].denominator == 1 and cosine[2] > 0
-      and cosine[2].numerator % 2 == 1)
+    sine_odd = (sine_exponent.denominator == 1 and sine_exponent > 0
+      and sine_exponent.numerator % 2 == 1)
+    cosine_odd = (cosine_exponent.denominator == 1 and cosine_exponent > 0
+      and cosine_exponent.numerator % 2 == 1)
     if not sine_odd and not cosine_odd: return None
     # Prefer cosine when both are odd: u=sin(phase) gives the conventional form.
     if cosine_odd:
-      return (sine[1], 'sin', sine[2],
-        (cosine[2].numerator - 1) // 2, frequency, Rational(1))
-    return (sine[1], 'cos', cosine[2],
-      (sine[2].numerator - 1) // 2, frequency, Rational(-1))
+      return (phase_expression, 'sin', sine_exponent,
+        (cosine_exponent.numerator - 1) // 2, frequency, Rational(1))
+    return (phase_expression, 'cos', cosine_exponent,
+      (sine_exponent.numerator - 1) // 2, frequency, Rational(-1))
 
   @classmethod
   def applicable(self, intg):
