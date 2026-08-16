@@ -5,6 +5,8 @@ Solved:
     int x^2 dx
     int x * ( x + 1 ) dx
     int x + x^2 dx
+    int 4 - x^2 dx
+    int 2 * x^2 - x^3 dx
     int 2 + cos( x ) dx
     int sin( x )^2 * cos( x ) dx
     int sin( x )^3 * cos( x )^3 dx

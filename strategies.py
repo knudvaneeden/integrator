@@ -14,6 +14,8 @@ from math import comb, isqrt
 
 # add on integration uncertainty variable
 def add_integration_constant(expr, original_intg):
+  if not original_intg.include_constant:
+    return expr
   return Sum(expr, original_intg.var.vset.new_variable(suggest='C'))
 
 
@@ -98,7 +100,9 @@ class ConstantFactor(IntegrationStrategy):
   def apply(self, intg):
     exp = intg.simplified().exp
     integrand, constant_factor = sorted([exp.a, exp.b], key=lambda e: is_constant(e, intg.var) )
-    return Product(constant_factor, Integral(integrand, intg.var))
+    primitive = Product(constant_factor,
+      Integral(integrand, intg.var, include_constant=False))
+    return add_integration_constant(primitive, intg)
 
 
 class ConstantDivisor(IntegrationStrategy):
@@ -114,7 +118,9 @@ class ConstantDivisor(IntegrationStrategy):
   @classmethod
   def apply(self, intg):
     exp = intg.simplified().exp
-    return Product(Fraction(Number(1), exp.denr), Integral(exp.numr, intg.var))
+    primitive = Product(Fraction(Number(1), exp.denr),
+      Integral(exp.numr, intg.var, include_constant=False))
+    return add_integration_constant(primitive, intg)
 
 
 class SimpleIntegral(IntegrationStrategy):
@@ -168,7 +174,9 @@ class DistributeAddition(IntegrationStrategy):
   @classmethod
   def apply(self, intg):
     exp = intg.simplified().exp
-    new_expr = Sum(Integral(exp.a, intg.var), Integral(exp.b, intg.var))
+    new_expr = Sum(
+      Integral(exp.a, intg.var, include_constant=False),
+      Integral(exp.b, intg.var, include_constant=False))
     return add_integration_constant(new_expr, intg)
 
 class OneOverX(IntegrationStrategy):
@@ -183,7 +191,8 @@ class OneOverX(IntegrationStrategy):
 
   @classmethod
   def apply(self, intg):
-    return Product(intg.simplified().exp.numr, Logarithm(intg.var))
+    primitive = Product(intg.simplified().exp.numr, Logarithm(intg.var))
+    return add_integration_constant(primitive, intg)
 
 
 class SimpleTrig(IntegrationStrategy):

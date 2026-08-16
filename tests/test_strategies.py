@@ -60,6 +60,25 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(res.a.a.var.symbol(), 'A')
     self.assertEqual(res.a.b.exp.symbol(), 'y')
     self.assertEqual(res.a.b.var.symbol(), 'A')
+    self.assertEqual(res.a.a.include_constant, False)
+    self.assertEqual(res.a.b.include_constant, False)
+
+  def test_ExactlyOneIntegrationConstantForSums(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    expected = {
+      'int 4 - x^2 dx': '(((4 * x) + (-1 * ((1 / 3) * (x ^ 3)))) + C)',
+      'int 2 * x^2 - x^3 dx':
+        '(((2 * ((1 / 3) * (x ^ 3))) + (-1 * ((1 / 4) * (x ^ 4)))) + C)',
+      'int 1 + x + x^2 + x^3 dx':
+        '(((((1 * x) + ((1 / 2) * (x ^ 2))) + '
+        '((1 / 3) * (x ^ 3))) + ((1 / 4) * (x ^ 4))) + C)'}
+    for problem, result_repr in expected.items():
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual(repr(result), result_repr, problem)
+      self.assertEqual(sum(repr(result).count(symbol) for symbol in 'ABC'), 1,
+        problem)
 
 
   def test_ConstantPower(self):

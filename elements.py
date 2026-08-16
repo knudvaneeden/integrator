@@ -405,15 +405,17 @@ class Integral(Expression):
   """
   An expression represent a single integral.
   """
-  def __init__(self, exp, var):
+  def __init__(self, exp, var, include_constant=True):
     """
     The integral of `exp` with respect to the variable `var`.
     """
     self.exp = exp
     self.var = var
+    self.include_constant = include_constant
 
   def simplified(self):
-    return Integral(self.exp.simplified(), self.var.simplified())
+    return Integral(self.exp.simplified(), self.var.simplified(),
+      self.include_constant)
 
   def __repr__(self):
     return "int[%s]d%s" %(self.exp, self.var)
