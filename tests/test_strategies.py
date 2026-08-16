@@ -140,6 +140,21 @@ class TestStrategies(unittest.TestCase):
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
 
+  def test_VersionFiveExamples(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int x*exp(x)^2 dx', 'int ln(x) dx', 'int log(x) dx',
+      'int arcsin(x) dx', 'int arccos(x) dx', 'int arctan(x) dx',
+      'int arccot(x) dx', 'int arcsec(x) dx', 'int arccsc(x) dx',
+      'int x^c dx', 'int sec(x)*tan(x) dx', 'int csc(x)*cot(x) dx',
+      'int sin(m*x)*cos(n*x) dx', 'int sin(m*x)*sin(n*x) dx',
+      'int cos(m*x)*cos(n*x) dx', 'int x/(x^2+x) dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+
 
 if __name__ == "__main__":
   unittest.main()

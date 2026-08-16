@@ -330,21 +330,22 @@ class Logarithm(Expression):
 
   def __repr__(self):
     if self.base == "euler" :
-      return "log(%s)" %(self.arg)
+      return "ln(%s)" %(self.arg)
     else :
-      return "log_(%s) %s" %(self.arg, self.base)
+      return "log(%s)" %(self.arg)
 
   def latex(self):
     if self.base == "euler" :
-      return "\log{%s}" %(self.arg.latex())
+      return "\ln{%s}" %(self.arg.latex())
     else :
-      return "log_{%s}{%s}" %(self.arg.latex(), self.base.latex())
+      return "\log_{%s}{%s}" %(self.base.latex(), self.arg.latex())
 
 
 class TrigFunction(Expression):
   """A trigonometric or inverse-trigonometric function."""
   NAMES = set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin',
-    'atan', 'exp'])
+    'acos', 'atan', 'acot', 'asec', 'acsc', 'arcsin', 'arccos',
+    'arctan', 'arccot', 'arcsec', 'arccsc', 'exp'])
 
   def __init__(self, name, arg):
     if name not in self.NAMES:
@@ -363,6 +364,10 @@ class TrigFunction(Expression):
       return "\\arcsin\\left(%s\\right)" % self.arg.latex()
     if self.name == 'atan':
       return "\\arctan\\left(%s\\right)" % self.arg.latex()
+    if self.name in ['acos', 'acot', 'asec', 'acsc']:
+      return "\\arc%s\\left(%s\\right)" % (self.name[1:], self.arg.latex())
+    if self.name in ['arcsin', 'arccos', 'arctan', 'arccot', 'arcsec', 'arccsc']:
+      return "\\%s\\left(%s\\right)" % (self.name, self.arg.latex())
     if self.name == 'exp':
       return "e^{%s}" % self.arg.latex()
     return "\\%s\\left(%s\\right)" % (self.name, self.arg.latex())

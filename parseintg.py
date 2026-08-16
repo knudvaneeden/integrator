@@ -22,7 +22,9 @@ PARENS_FLAT = ['(', ')', '[', ']']
 PARENS_LEFT  = ['(', '[']
 PARENS_RIGHT = [')', ']']
 OPERATORS = ["*", "+", "/", "-","(",")","[","]"]
-FUNCTION_NAMES = ['sqrt', 'asin', 'atan', 'exp', 'log', 'ln',
+FUNCTION_NAMES = ['arcsin', 'arccos', 'arctan', 'arccot', 'arcsec',
+  'arccsc', 'sqrt', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc',
+  'exp', 'log', 'ln',
   'sin', 'cos', 'tan', 'sec', 'csc', 'cot']
 
 
@@ -202,8 +204,10 @@ def parse_tokens(tokens, vset=None, debug=False):
           tokens[function_index])
       name = tokens[function_index]
       arg = tokens[function_index + 1]
-      if name in ['log', 'ln']:
+      if name == 'ln':
         new_token = Logarithm(arg)
+      elif name == 'log':
+        new_token = Logarithm(arg, Number(10))
       elif name == 'sqrt':
         new_token = Power(arg, Fraction(Number(1), Number(2)))
       else:

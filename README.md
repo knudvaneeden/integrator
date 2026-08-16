@@ -20,6 +20,22 @@ Solved:
     int 1 / ( 1 + x^2 ) dx
     int 1 / ( 1 - x^2 ) dx
     int cos( x ) / ( 1 + sin( x ) )^2 dx
+    int x exp(x)^2 dx
+    int ln( x ) dx
+    int log( x ) dx
+    int arcsin( x ) dx
+    int arccos( x ) dx
+    int arctan( x ) dx
+    int arccot( x ) dx
+    int arcsec( x ) dx
+    int arccsc( x ) dx
+    int x^c dx
+    int sec( x ) * tan( x ) dx
+    int csc( x ) * cot( x ) dx
+    int sin( m * x ) * cos( n * x ) dx
+    int sin( m * x ) * sin( n * x ) dx
+    int cos( m * x ) * cos( n * x ) dx
+    int x / ( x^2 + x ) dx
 
 ===
 

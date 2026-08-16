@@ -45,6 +45,9 @@ class TestElements(unittest.TestCase):
     self.assertEqual(isinstance(parsed.exp, TrigFunction), True)
     self.assertEqual(parsed.exp.name, 'sin')
     self.assertEqual(parse('asin(x)').name, 'asin')
+    self.assertEqual(repr(parse('ln(x)')), 'ln(x)')
+    self.assertEqual(repr(parse('log(x)')), 'log(x)')
+    self.assertEqual(parse('arccos(x)').name, 'arccos')
 
   def test_parser(self):
     self.assertEqual('NO', 'TESTS')

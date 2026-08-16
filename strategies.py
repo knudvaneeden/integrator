@@ -395,7 +395,7 @@ class ScreenshotExamples(IntegrationStrategy):
       '(cos(%s) / ((1 + (sin(%s) ^ 2)) ^ 2)' % (x, x) + ')',
       '(cos(%s) / ((1 + sin(%s)) ^ 2))' % (x, x),
       '((%s ^ 2) / ((1 + (-1 * (%s ^ 2))) ^ (1 / 2)))' % (x, x),
-      '(%s * log(%s))' % (x, x),
+      '(%s * ln(%s))' % (x, x),
       '((tan(%s) ^ 5) * (sec(%s) ^ 2))' % (x, x),
       '(exp((2 * %s)) / (1 + exp(%s)))' % (x, x),
       '(1 / (%s * ((1 + (%s ^ 2)) ^ (1 / 2))))' % (x, x),
@@ -445,7 +445,7 @@ class ScreenshotExamples(IntegrationStrategy):
       primitive = Sum(Product(half, TrigFunction('asin', x)),
         Product(Fraction(Number(-1), Number(2)), Product(x, root)))
 
-    elif key == '(%s * log(%s))' % (sx, sx):
+    elif key == '(%s * ln(%s))' % (sx, sx):
       x2 = Power(x, Number(2))
       primitive = Sum(Product(Fraction(x2, Number(2)), Logarithm(x)),
         Product(Fraction(Number(-1), Number(4)), x2))
@@ -496,8 +496,94 @@ class ScreenshotExamples(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class VersionFiveExamples(IntegrationStrategy):
+  """Additional standard forms requested for integrator_saint_05."""
+  description = "inverse trigonometric, logarithmic, and product standard form"
+
+  @classmethod
+  def applicable(self, intg):
+    x = intg.var.symbol()
+    keys = [
+      '(%s * (exp(%s) ^ 2))' % (x, x),
+      'ln(%s)' % x,
+      'log(%s)' % x,
+      'arcsin(%s)' % x, 'asin(%s)' % x,
+      'arccos(%s)' % x, 'acos(%s)' % x,
+      'arctan(%s)' % x, 'atan(%s)' % x,
+      'arccot(%s)' % x, 'acot(%s)' % x,
+      'arcsec(%s)' % x, 'asec(%s)' % x,
+      'arccsc(%s)' % x, 'acsc(%s)' % x,
+      '(%s / ((%s ^ 2) + %s))' % (x, x, x),
+      '(sin((m * %s)) * cos((n * %s)))' % (x, x),
+      '(sin((m * %s)) * sin((n * %s)))' % (x, x),
+      '(cos((m * %s)) * cos((n * %s)))' % (x, x)]
+    return repr(intg.simplified().exp) in keys
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    key = repr(intg.simplified().exp)
+    sx = x.symbol()
+    half = Fraction(Number(1), Number(2))
+    x2 = Power(x, Number(2))
+    one_plus_x2 = Sum(Number(1), x2)
+    one_minus_x2 = Sum(Number(1), Product(Number(-1), x2))
+    x2_minus_one = Sum(x2, Number(-1))
+
+    if key == '(%s * (exp(%s) ^ 2))' % (sx, sx):
+      primitive = Product(Fraction(Number(1), Number(4)),
+        Product(Sum(Product(Number(2), x), Number(-1)),
+          TrigFunction('exp', Product(Number(2), x))))
+    elif key == 'ln(%s)' % sx:
+      primitive = Sum(Product(x, Logarithm(x)), Product(Number(-1), x))
+    elif key == 'log(%s)' % sx:
+      primitive = Sum(Product(x, Logarithm(x, Number(10))),
+        Product(Number(-1), Fraction(x, Logarithm(Number(10)))))
+    elif key in ['arcsin(%s)' % sx, 'asin(%s)' % sx]:
+      primitive = Sum(Product(x, TrigFunction('arcsin', x)),
+        Power(one_minus_x2, half))
+    elif key in ['arccos(%s)' % sx, 'acos(%s)' % sx]:
+      primitive = Sum(Product(x, TrigFunction('arccos', x)),
+        Product(Number(-1), Power(one_minus_x2, half)))
+    elif key in ['arctan(%s)' % sx, 'atan(%s)' % sx]:
+      primitive = Sum(Product(x, TrigFunction('arctan', x)),
+        Product(Fraction(Number(-1), Number(2)), Logarithm(one_plus_x2)))
+    elif key in ['arccot(%s)' % sx, 'acot(%s)' % sx]:
+      primitive = Sum(Product(x, TrigFunction('arccot', x)),
+        Product(half, Logarithm(one_plus_x2)))
+    elif key in ['arcsec(%s)' % sx, 'asec(%s)' % sx]:
+      primitive = Sum(Product(x, TrigFunction('arcsec', x)),
+        Product(Number(-1), Logarithm(Sum(x, Power(x2_minus_one, half)))))
+    elif key in ['arccsc(%s)' % sx, 'acsc(%s)' % sx]:
+      primitive = Sum(Product(x, TrigFunction('arccsc', x)),
+        Logarithm(Sum(x, Power(x2_minus_one, half))))
+    elif key == '(%s / ((%s ^ 2) + %s))' % (sx, sx, sx):
+      primitive = Logarithm(Sum(x, Number(1)))
+    else:
+      exp = intg.simplified().exp
+      a, b = exp.a, exp.b
+      m = linear_coefficient(a.arg, x)
+      n = linear_coefficient(b.arg, x)
+      plus = Sum(m, n)
+      minus = Sum(m, Product(Number(-1), n))
+      plus_arg = Product(plus, x)
+      minus_arg = Product(minus, x)
+      if a.name == 'sin' and b.name == 'cos':
+        primitive = Sum(Product(Fraction(Number(-1), Product(Number(2), plus)),
+            TrigFunction('cos', plus_arg)),
+          Product(Fraction(Number(-1), Product(Number(2), minus)),
+            TrigFunction('cos', minus_arg)))
+      elif a.name == 'sin':
+        primitive = Sum(Fraction(TrigFunction('sin', minus_arg), Product(Number(2), minus)),
+          Product(Number(-1), Fraction(TrigFunction('sin', plus_arg), Product(Number(2), plus))))
+      else:
+        primitive = Sum(Fraction(TrigFunction('sin', minus_arg), Product(Number(2), minus)),
+          Fraction(TrigFunction('sin', plus_arg), Product(Number(2), plus)))
+    return add_integration_constant(primitive, intg)
+
+
 STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, ExponentialFunction, ConstantBaseExponential,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
-  ScreenshotExamples]
+  ScreenshotExamples, VersionFiveExamples]
