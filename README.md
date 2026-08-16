@@ -33,7 +33,6 @@ Solved:
     int 1 / sqrt( x^2 + m^2 + x ) dx
     int sec( x )^2 * tan( x ) dx
     int ( 3 * x^7 - 2 * x^3 + 5 ) / ( 1 + x^2 ) dx
-    int sec(x)^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
     int sec( x )^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
     int 1 / sec( x )^2 dx
     int x / sqrt( x^2 + 2 * x + 5 ) dx
@@ -48,13 +47,10 @@ Solved:
     int (arcsin(x) + sin(x))^2 * ((1 - x^2)^(-1/2) + cos(x)) dx
     int cos( 3 * x ) / ( 1 - sin( 3 * x ))^2 dx
     int x^4 / ( 1 - x^2 )^( 5 / 2 ) dx
-    int x^4 / ( 1 - x^2 )^(5/2) dx
-    int tan(x)^5 * sec(x)^2 dx
+    int tan( x )^5 * sec( x )^2 dx
     int 1 / (1 + x^4)^2 dx
     int x^2 / sqrt( 1 - x^2 ) dx
     int x * ln( x ) dx
-    int tan( x )^5 sec( x )^2 dx
-    int exp(2*x) / ( 1 + exp(x) ) dx
     int 1 / ( x * sqrt( 1 + x^2 ) ) dx
     int sin( x )^2 * cos( x )^4 dx
     int c^x dx
