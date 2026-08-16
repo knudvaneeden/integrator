@@ -114,3 +114,50 @@ input[name="problem-solve"] {
 .clearbar {
   clear: both;
 }
+
+.and-or-section {
+  clear: both;
+  margin: 20px 50px 50px;
+  padding: 20px;
+  border: 1px solid #A5CDDE;
+  background: #FAFCFE;
+  overflow-x: auto;
+}
+
+.and-or-heading h2 { display: inline-block; margin-right: 20px; }
+.graph-print { padding: 7px 12px; }
+.graph-tree, .graph-tree ul { list-style: none; margin: 0; padding-left: 30px; }
+.graph-tree ul { border-left: 2px solid #AAB8C2; }
+.graph-tree li { position: relative; padding: 7px 0 7px 20px; }
+.graph-tree ul > li:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 24px;
+  width: 20px;
+  border-top: 2px solid #AAB8C2;
+}
+.graph-node {
+  display: inline-block;
+  max-width: 720px;
+  padding: 7px 11px;
+  border: 2px solid #547594;
+  border-radius: 5px;
+  background: white;
+  line-height: 1.35em;
+}
+.graph-and { border-color: #B45F06; background: #FFF2CC; font-weight: bold; }
+.graph-or { border-color: #674EA7; background: #EADCF8; font-weight: bold; }
+.graph-rule { border-color: #3D85C6; background: #D9EAF7; }
+.graph-chosen { border-color: #38761D; background: #D9EAD3; }
+.graph-rejected { color: #777; border-style: dashed; }
+.graph-solved { border-color: #38761D; }
+.graph-stuck { border-color: #990000; background: #F4CCCC; }
+
+@media print {
+  body.printing-graph > header,
+  body.printing-graph .input-container,
+  body.printing-graph .problem-response,
+  body.printing-graph .graph-print { display: none; }
+  body.printing-graph .and-or-section { margin: 0; border: 0; }
+}

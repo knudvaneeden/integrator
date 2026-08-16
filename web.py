@@ -6,7 +6,7 @@ from flask import app, make_response, render_template, request
 
 from sublogger import SubLogger
 from parseintg import parse
-from solver import attempt_integral
+from solver import attempt_integral, AndOrGraph
 
 app = Flask(__name__)
 
@@ -29,11 +29,13 @@ def api_solve():
   problem_input = request.args.get('problem', u'').encode('ascii', 'ignore')
 
   log = SubLogger('root')
-  attempt_integral(parse(problem_input), log)
+  parsed = parse(problem_input)
+  graph = AndOrGraph(parsed.latex())
+  attempt_integral(parsed, log, graph)
   body = sublog_to_html(log)
 
-  resp = make_response(body)
-  resp.mimetype = 'text/html'
+  resp = make_response(json.dumps({'html': body, 'graph': graph.as_dict()}))
+  resp.mimetype = 'application/json'
   return resp
 
 

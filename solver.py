@@ -25,7 +25,22 @@ def newlines_to_breaks(s):
   """
   return s.replace("\n", "<br>")
 
-def attempt_integral(expr_raw, logger):
+class AndOrGraph(object):
+  """A dependency-free AND-OR tree for one solver run."""
+  def __init__(self, label):
+    self.root = {'kind': 'problem', 'label': label, 'children': []}
+
+  def child(self, parent, kind, label, status=None):
+    node = {'kind': kind, 'label': label, 'children': []}
+    if status != None: node['status'] = status
+    parent['children'].append(node)
+    return node
+
+  def as_dict(self):
+    return self.root
+
+
+def attempt_integral(expr_raw, logger, graph=None, graph_node=None):
   """
   attempt_integral is a recursive function which takes
   an expressions and attempts to simplify it.
@@ -40,6 +55,8 @@ def attempt_integral(expr_raw, logger):
   and find one to apply to attempt to solve
   or simplify the integral.
   """
+  if graph != None and graph_node == None:
+    graph_node = graph.root
   logger.log("I will attempt to solve %s." % latex_wrap(expr_raw.latex()))
   expr = expr_raw.simplified()
   if expr != expr_raw:
@@ -50,6 +67,10 @@ def attempt_integral(expr_raw, logger):
     logger.log("%s is an integral." % latex_wrap(expr.latex()))
 
     logger.log("Which of my strategies are applicable to this integral?")
+    or_node = None
+    rejected = 0
+    if graph != None:
+      or_node = graph.child(graph_node, 'or', 'OR: choose an integration rule')
     for strategy in STRATEGIES:
       if strategy.applicable(expr):
         strategy_source = newlines_to_breaks(inspect.getsource(strategy))
@@ -62,28 +83,46 @@ def attempt_integral(expr_raw, logger):
           strategy_info))
 
         applied = strategy.apply(expr)
-        return attempt_integral(applied, logger)
+        next_node = None
+        if graph != None:
+          graph.child(or_node, 'rule', strategy.description, 'chosen')
+          if rejected:
+            graph.child(or_node, 'rule', '%d earlier rules were not applicable' % rejected, 'rejected')
+          next_node = graph.child(graph_node, 'expression', applied.latex())
+        return attempt_integral(applied, logger, graph, next_node)
       else:
         # logger.log("The \"{}\" rule is not applicable.".format(strategy.description))
-        pass
+        rejected += 1
 
     logger.log("None of my integration strategies will work. I think I'm stuck.")
+    if graph != None:
+      graph.child(or_node, 'result', 'No applicable strategy', 'stuck')
     return expr
 
   # if the expression is a sum or product then break it into to sub-problems.
   elif expr.is_a(Sum):
     logger.log("{} is a sum. I will solve the two sub-problems and then add the results.".format(latex_wrap(expr.latex())))
     subproblem_a, subproblem_b = logger.split('subproblem-a', 'subproblem-b')
-    sub_a = attempt_integral(expr.a, subproblem_a)
-    sub_b = attempt_integral(expr.b, subproblem_b)
+    node_a = node_b = None
+    if graph != None:
+      and_node = graph.child(graph_node, 'and', 'AND: solve both addends')
+      node_a = graph.child(and_node, 'expression', expr.a.latex())
+      node_b = graph.child(and_node, 'expression', expr.b.latex())
+    sub_a = attempt_integral(expr.a, subproblem_a, graph, node_a)
+    sub_b = attempt_integral(expr.b, subproblem_b, graph, node_b)
     combined = Sum(sub_a, sub_b)
     logger.log("I will add the results of the sub-problems back together to get {}.".format(latex_wrap(combined.latex())))
     return combined
   elif expr.is_a(Product):
     logger.log("{} is a product. I will solve the two sub-problems and then multiply the results.".format(latex_wrap(expr.latex())))
     subproblem_a, subproblem_b = logger.split('subproblem-a', 'subproblem-b')
-    sub_a = attempt_integral(expr.a, subproblem_a)
-    sub_b = attempt_integral(expr.b, subproblem_b)
+    node_a = node_b = None
+    if graph != None:
+      and_node = graph.child(graph_node, 'and', 'AND: solve both factors')
+      node_a = graph.child(and_node, 'expression', expr.a.latex())
+      node_b = graph.child(and_node, 'expression', expr.b.latex())
+    sub_a = attempt_integral(expr.a, subproblem_a, graph, node_a)
+    sub_b = attempt_integral(expr.b, subproblem_b, graph, node_b)
     combined = Product(sub_a, sub_b)
     logger.log("I will multiply the results of the sub-problems back together to get {}.".format(latex_wrap(combined.latex())))
     return combined
@@ -91,6 +130,8 @@ def attempt_integral(expr_raw, logger):
   # if the expression has any other form, then it's probably a basic element, so it's already simplified.
   else:
     logger.log("{} is already simplified.".format(latex_wrap(expr.latex())))
+    if graph != None:
+      graph.child(graph_node, 'result', 'Solved leaf', 'solved')
     return expr
 
 

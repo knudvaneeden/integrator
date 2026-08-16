@@ -5,6 +5,28 @@ $(function(){
   var $problem_solve_btn = $('input[name="problem-solve"]')
   var $problem_status = $('.problem-status')
   var $problem_response = $('.problem-response')
+  var $and_or_graph = $('.and-or-graph')
+
+  function graph_node(node) {
+    var $item = $('<li>')
+    var $node = $('<div>').addClass('graph-node').addClass('graph-' + node.kind)
+    if (node.status) $node.addClass('graph-' + node.status)
+    $node.text(node.label)
+    $item.append($node)
+    if (node.children && node.children.length) {
+      var $children = $('<ul>')
+      $.each(node.children, function(_, child) {
+        $children.append(graph_node(child))
+      })
+      $item.append($children)
+    }
+    return $item
+  }
+
+  function render_graph(graph) {
+    $and_or_graph.empty()
+    $('<ul>').addClass('graph-tree').append(graph_node(graph)).appendTo($and_or_graph)
+  }
 
   function show_status(status) {
     // status can be "solved", "fetching", or "error"
@@ -30,7 +52,8 @@ $(function(){
 
         show_status("solved")
         $problem_response.empty()
-        $problem_response.append(data)
+        $problem_response.append(data.html)
+        render_graph(data.graph)
 
         MathJax.Hub.Queue(["Typeset", MathJax.Hub, $problem_response[0]]);
       },
@@ -45,4 +68,10 @@ $(function(){
   $problem_input.keyup(fetch_problem_solution)
 
   $problem_solve_btn.click();
+
+  $('.graph-print').click(function() {
+    $('body').addClass('printing-graph')
+    window.print()
+    $('body').removeClass('printing-graph')
+  })
 })
