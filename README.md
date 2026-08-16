@@ -1,22 +1,61 @@
+Solved:
+
+    int x^4 / ( 1 - x^2 )^( 5 / 2 ) dx
+    int tan(x)^5 * sec(x)^2 dx
+    int 1 / (1 + x^4)^2 dx
+    int x^2 / sqrt( 1 - x^2 ) dx
+    int x * ln( x ) dx
+    int tan( x )^5 sec( x )^2 dx
+    int exp(2*x) / ( 1 + exp(x) ) dx
+    int 1 / ( x * sqrt( 1 + x^2 ) ) dx
+    int sin( x )^2 * cos( x )^4 dx
+    int c^x dx
+    int x^n dx
+    int 1/x dx
+    int exp( x ) dx
+    int sin( x ) dx
+    int cos( x ) dx
+    int sec( x )^2 dx
+    int csc( x )^2 dx
+    int 1 / ( 1 + x^2 ) dx
+    int 1 / ( 1 - x^2 ) dx
+
+===
+
+Not solved:
+
+    int cos( x ) / ( 1 + sin( x ) )^2 dx
+
 # Author
-This program was originally developed by Miles Steele. It solved only the integral of powers of the variable x initially.
-It has now been extended (solely by involving ChatGPT who has supplied all the changes) to be more according the original examples as were solvable by the SAINT program written by James Robert Slagle
-(e.g. trigonometric functions can be integrated).
+
+This program was originally developed by Miles Steele. It solved only the
+integral of powers of the variable x initially. It has now been extended
+(solely by involving ChatGPT, which supplied all the changes) to correspond
+more closely to the original examples solvable by the SAINT program written
+by James Robert Slagle (for example, trigonometric functions can be
+integrated).
 
 # Original LISP source of SAINT by James Robert Slagle
-This LISP 1.5 source code (running on an IBM 7090 mainframe computer with totally 32 kilobytes of memory available) has been lost and is not found anywhere on the Internet.
+
+This LISP 1.5 source code (running on an IBM 7090 mainframe computer with a
+total of 32 kilobytes of memory available) has been lost and has not been
+found anywhere on the Internet.
 
 # You can see a very good explanation of the working of SAINT
-Professor Patric Winston in his MIT Artificial Intelligence lecture 2.
+
+Professor Patrick Winston explains it in his MIT Artificial Intelligence
+Lecture 2:
 
 https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-2-reasoning-goal-trees-and-problem-solving/
 
-# Prerequisites:
-You must currently use Python version 2.7.18 to have it working out of the box
+# Prerequisites
+
+You must currently use Python version 2.7.18 to have it working out of the
+box:
 
 https://www.python.org/downloads/release/python-2718/
 
-It will currently not work out of the box using Python version 3.x thus.
+It will currently not work out of the box using Python version 3.x.
 
 # Integrator
 This is a symbolic integrator based on James Slagle's 1961 thesis.
@@ -40,7 +79,7 @@ of presenting how it does the integration,
 or try adding your own strategies to make it smarter,
 or anything you can think of.
 
-To get more ideas about what to fiddle with,
+To get more ideas about what to fiddle with, 
 you may want to read the _Parts of the Machine_
 section below to get a sense for how the pieces
 of the integrator fit together and decide
@@ -150,7 +189,7 @@ But the output is not very pretty as it is meant for the web.
     $ python solver.py
     Enter a string to be integrated.
     Just press enter to integrate 'int 3 x / 4 dx'
-    ->
+    -> 
     I will attempt to solve \( \int{\frac{3 \cdot x}{4}}\;dx \).
     \( \int{\frac{3 \cdot x}{4}}\;dx \) is an integral.
     Which of my strategies are applicable to this integral?

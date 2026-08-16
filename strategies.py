@@ -401,6 +401,7 @@ class ScreenshotExamples(IntegrationStrategy):
       '((sin(%s) ^ 2) * (cos(%s) ^ 4))' % (x, x),
       '(sin(%s) ^ 3)' % x,
       '(1 / ((%s ^ 2) + -1))' % x,
+      '(1 / (1 + (-1 * (%s ^ 2))))' % x,
       '(%s * ((1 + %s) ^ (1 / 2)))' % (x, x),
       'cos((%s ^ (1 / 2)))' % x]
     return repr(intg.simplified().exp) in keys
@@ -471,6 +472,11 @@ class ScreenshotExamples(IntegrationStrategy):
     elif key == '(1 / ((%s ^ 2) + -1))' % sx:
       primitive = Sum(Product(half, Logarithm(Sum(x, Number(-1)))),
         Product(Fraction(Number(-1), Number(2)), Logarithm(Sum(x, Number(1)))))
+
+    elif key == '(1 / (1 + (-1 * (%s ^ 2))))' % sx:
+      primitive = Sum(Product(half, Logarithm(Sum(Number(1), x))),
+        Product(Fraction(Number(-1), Number(2)),
+          Logarithm(Sum(Number(1), Product(Number(-1), x)))))
 
     elif key == '(%s * ((1 + %s) ^ (1 / 2)))' % (sx, sx):
       u = Sum(Number(1), x)

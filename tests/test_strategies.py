@@ -131,6 +131,7 @@ class TestStrategies(unittest.TestCase):
       'int 1/sqrt(1-x^2) dx',
       'int sin(x)^3 dx',
       'int 1/(x^2-1) dx',
+      'int 1/(1-x^2) dx',
       'int cos(3*x+5) dx',
       'int x*sqrt(1+x) dx',
       'int cos(sqrt(x)) dx']
