@@ -1,11 +1,14 @@
 Solved:
 
     int x dx
+    int x * sin( x ) * cos( x ) dx
     int x^2 dx
     int x * ( x + 1 ) dx
     int x + x^2 dx
     int 2 + cos( x ) dx
     int sin( x )^2 * cos( x ) dx
+    int sin( x )^3 * cos( x )^3 dx
+    int sin( x )^(1/3) * cos( x )^3 dx
     int sin( x )^4 * cos( x )^4 dx
     int sin( x )^4 / cos( x )^4 dx
     int 1 / cot( x )^4 dx

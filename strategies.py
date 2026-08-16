@@ -268,6 +268,107 @@ class TrigProduct(IntegrationStrategy):
     return add_integration_constant(Fraction(primitive, coefficient).simplified(), intg)
 
 
+class PolynomialSineCosineProduct(IntegrationStrategy):
+  """Integrate P(x)*sin(a*x+b)*cos(c*x+d) for rational P, a, b, c, d."""
+  description = ("product-to-sum followed by polynomial/trigonometric "
+    "integration by parts")
+
+  @classmethod
+  def _parts(self, intg):
+    factors = []
+
+    def collect(expr):
+      if expr.is_a(Product):
+        collect(expr.a)
+        collect(expr.b)
+      else:
+        factors.append(expr)
+
+    collect(intg.simplified().exp)
+    sines = [factor for factor in factors
+      if factor.is_a(TrigFunction) and factor.name == 'sin']
+    cosines = [factor for factor in factors
+      if factor.is_a(TrigFunction) and factor.name == 'cos']
+    if len(sines) != 1 or len(cosines) != 1: return None
+    sine, cosine = sines[0], cosines[0]
+    sine_phase = _laurent_polynomial_coefficients(sine.arg, intg.var)
+    cosine_phase = _laurent_polynomial_coefficients(cosine.arg, intg.var)
+    if sine_phase == None or cosine_phase == None: return None
+    if any(degree < 0 or degree > 1 for degree in sine_phase): return None
+    if any(degree < 0 or degree > 1 for degree in cosine_phase): return None
+    if sine_phase.get(1, Rational(0)) == 0: return None
+    if cosine_phase.get(1, Rational(0)) == 0: return None
+
+    polynomial_factors = [factor for factor in factors
+      if factor is not sine and factor is not cosine]
+    polynomial = Number(1)
+    for factor in polynomial_factors:
+      polynomial = Product(polynomial, factor).simplified()
+    coefficients = _laurent_polynomial_coefficients(polynomial, intg.var)
+    if coefficients == None or any(degree < 0 for degree in coefficients):
+      return None
+    return sine.arg, cosine.arg, coefficients
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    sine_phase, cosine_phase, coefficients = self._parts(intg)
+    x = intg.var
+
+    def polynomial_primitive():
+      terms = []
+      for degree, coefficient in sorted(coefficients.items()):
+        power = x if degree == 0 else Power(x, Number(degree + 1))
+        terms.append(_scale_by_rational(power,
+          coefficient / Rational(degree + 1)))
+      result = terms[0] if terms else Number(0)
+      for term in terms[1:]: result = Sum(result, term)
+      return result
+
+    def monomial_trig_primitive(degree, name, phase, frequency):
+      trig_name = 'cos' if name == 'sin' else 'sin'
+      trig = TrigFunction(trig_name, phase)
+      power = x if degree == 1 else Power(x, Number(degree))
+      leading_sign = Rational(-1) if name == 'sin' else Rational(1)
+      leading_term = trig if degree == 0 else Product(power, trig).simplified()
+      leading = _scale_by_rational(leading_term,
+        leading_sign / frequency)
+      if degree == 0: return leading
+      other_name = 'cos' if name == 'sin' else 'sin'
+      remainder_sign = Rational(1) if name == 'sin' else Rational(-1)
+      remainder = monomial_trig_primitive(degree - 1, other_name,
+        phase, frequency)
+      return Sum(leading, _scale_by_rational(remainder,
+        remainder_sign * Rational(degree) / frequency))
+
+    def polynomial_sine_primitive(phase):
+      phase_coefficients = _laurent_polynomial_coefficients(phase, x)
+      frequency = phase_coefficients.get(1, Rational(0))
+      if frequency == 0:
+        return Product(TrigFunction('sin', phase), polynomial_primitive()).simplified()
+      terms = [_scale_by_rational(
+        monomial_trig_primitive(degree, 'sin', phase, frequency), coefficient)
+        for degree, coefficient in sorted(coefficients.items())]
+      result = terms[0] if terms else Number(0)
+      for term in terms[1:]: result = Sum(result, term)
+      return result
+
+    plus_phase = Sum(sine_phase, cosine_phase).simplified()
+    if sine_phase == cosine_phase:
+      primitive = _scale_by_rational(
+        polynomial_sine_primitive(plus_phase), Rational(1, 2))
+    else:
+      minus_phase = Sum(sine_phase,
+        Product(Number(-1), cosine_phase)).simplified()
+      primitive = _scale_by_rational(Sum(
+        polynomial_sine_primitive(plus_phase),
+        polynomial_sine_primitive(minus_phase)), Rational(1, 2))
+    return add_integration_constant(primitive, intg)
+
+
 class ExponentialFunction(IntegrationStrategy):
   description = "integral of exp(ax+b)"
 
@@ -1073,6 +1174,78 @@ def _rational_trig_square(expr):
     and power.base.is_a(TrigFunction) and power.base.name in ['sin', 'cos']):
     return coefficient, power.base
   return None
+
+
+def _sine_or_cosine_power(expr):
+  """Return (name, phase, rational exponent) for sin(phase)^p or cos(phase)^p."""
+  if expr.is_a(TrigFunction) and expr.name in ['sin', 'cos']:
+    return expr.name, expr.arg, Rational(1)
+  if (expr.is_a(Power) and expr.base.is_a(TrigFunction)
+      and expr.base.name in ['sin', 'cos']):
+    exponent = _rational_value(expr.exponent)
+    if exponent != None:
+      return expr.base.name, expr.base.arg, exponent
+  return None
+
+
+class OddSineCosinePowerSubstitution(IntegrationStrategy):
+  """Integrate sin(u)^p*cos(u)^q when p or q is a positive odd integer."""
+  description = ("odd sine/cosine power substitution with a rational "
+    "remaining exponent")
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return None
+    first = _sine_or_cosine_power(exp.a)
+    second = _sine_or_cosine_power(exp.b)
+    if first == None or second == None: return None
+    powers = {first[0]: first, second[0]: second}
+    if set(powers.keys()) != set(['sin', 'cos']): return None
+    sine, cosine = powers['sin'], powers['cos']
+    if sine[1] != cosine[1]: return None
+    phase = _laurent_polynomial_coefficients(sine[1], intg.var)
+    if phase == None or any(degree < 0 or degree > 1 for degree in phase):
+      return None
+    frequency = phase.get(1, Rational(0))
+    if frequency == 0: return None
+
+    sine_odd = (sine[2].denominator == 1 and sine[2] > 0
+      and sine[2].numerator % 2 == 1)
+    cosine_odd = (cosine[2].denominator == 1 and cosine[2] > 0
+      and cosine[2].numerator % 2 == 1)
+    if not sine_odd and not cosine_odd: return None
+    # Prefer cosine when both are odd: u=sin(phase) gives the conventional form.
+    if cosine_odd:
+      return (sine[1], 'sin', sine[2],
+        (cosine[2].numerator - 1) // 2, frequency, Rational(1))
+    return (sine[1], 'cos', cosine[2],
+      (sine[2].numerator - 1) // 2, frequency, Rational(-1))
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, substitution_name, base_exponent, even_half, frequency, sign = \
+      self._parts(intg)
+    substitution = TrigFunction(substitution_name, phase)
+    terms = []
+    for j in range(even_half + 1):
+      coefficient = (sign * Rational(comb(even_half, j))
+        * (Rational(-1) ** j) / frequency)
+      integrated_exponent = base_exponent + 2 * j + 1
+      if integrated_exponent == 0:
+        term = _scale_by_rational(Logarithm(substitution), coefficient)
+      else:
+        power = (substitution if integrated_exponent == 1 else
+          Power(substitution, _rational_expression(integrated_exponent)))
+        term = _scale_by_rational(power, coefficient / integrated_exponent)
+      terms.append(term)
+    primitive = terms[0] if terms else Number(0)
+    for term in terms[1:]: primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
 
 
 class TrigSquareBinomialIntegerPower(IntegrationStrategy):
@@ -2052,9 +2225,11 @@ class VersionFiveExamples(IntegrationStrategy):
 STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, SineCosineLinearCombination, DistributeAddition,
   OneOverX, SimpleTrig, TrigSquare,
-  TrigProduct, ExponentialFunction, ConstantBaseExponential,
+  TrigProduct, PolynomialSineCosineProduct,
+  ExponentialFunction, ConstantBaseExponential,
   PolynomialDerivativeExponentialSubstitution,
-  TrigBinomialPowerSubstitution, TrigSquareBinomialIntegerPower,
+  TrigBinomialPowerSubstitution, OddSineCosinePowerSubstitution,
+  TrigSquareBinomialIntegerPower,
   SecSquaredRationalTangent, ReciprocalSecSquared,
   ExponentialOverLinearQuotientDerivative, CompositeSquareSubstitution,
   SquaredFractionalPowerBinomial,

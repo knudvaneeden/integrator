@@ -139,7 +139,6 @@ class TestStrategies(unittest.TestCase):
     for problem in problems:
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
-
   def test_VersionFiveExamples(self):
     from parseintg import parse
     from solver import attempt_integral
@@ -733,6 +732,42 @@ class TestStrategies(unittest.TestCase):
                     'int 2 * exp( x ) * cos( x ) dx']:
       self.assertEqual('int[' in repr(attempt_integral(
         parse(problem), SubLogger('test'))), False, problem)
+
+  def test_PolynomialSineCosineProduct(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int x * sin( x ) * cos( x ) dx',
+      'int ( x^2 + 2 * x + 3 ) * sin( 2 * x + 1 ) * cos( 3 * x - 4 ) dx',
+      'int x^3 * sin( 2 * x ) * cos( 2 * x ) dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+    requested = attempt_integral(parse(problems[0]), SubLogger('test'))
+    self.assertEqual(repr(requested),
+      '((((-1 * ((x * cos((x + x))) / 2)) + ((sin((x + x)) / 2) / 2)) / 2) + C)')
+
+  def test_OddSineCosinePowerSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int sin( x )^3 * cos( x )^3 dx',
+      'int sin( x )^(1/3) * cos( x )^3 dx',
+      'int sin( 2 * x + 1 )^(2/3) * cos( 2 * x + 1 )^5 dx',
+      'int sin( 3 * x - 2 )^5 * cos( 3 * x - 2 )^(4/3) dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+
+    first = attempt_integral(parse(problems[0]), SubLogger('test'))
+    second = attempt_integral(parse(problems[1]), SubLogger('test'))
+    self.assertEqual(repr(first),
+      '((((sin(x) ^ 4) / 4) + (-1 * ((sin(x) ^ 6) / 6))) + C)')
+    self.assertEqual(repr(second),
+      '((((3 * (sin(x) ^ (4 / 3))) / 4) + '
+      '((-3 * (sin(x) ^ (10 / 3))) / 10)) + C)')
 
   def test_SecantPowerIntegerAndSymbolic(self):
     from parseintg import parse
