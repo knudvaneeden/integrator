@@ -9,9 +9,16 @@ header {
   color: white;
   background-color: #043D68;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
-  font-size: 3em;
+  font-size: 2.25em;
   font-family: Verdana;
   padding: 45px 50px;
+}
+
+@media (max-width: 1000px) {
+  header {
+    font-size: 1.6em;
+    padding: 30px 35px;
+  }
 }
 
 .problem-container {
