@@ -50,6 +50,9 @@ input[name="problem-input"] {
   background: none;
   padding: 8px 15px;
   border-left: 2px solid #656565;
+  box-sizing: border-box;
+  width: 600px;
+  max-width: 100%;
 }
 
 input[name="problem-input"].status-solved {
@@ -120,9 +123,7 @@ input[name="problem-solve"] {
   float: right;
 }
 
-.problem-input {
-  width: 200px;
-}
+.problem-input { width: 600px; max-width: 100%; }
 
 .subproblem {
   /*border-left: 2px solid #656565;*/

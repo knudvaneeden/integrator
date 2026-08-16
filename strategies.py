@@ -521,6 +521,31 @@ class PolynomialOverSquareRoot(IntegrationStrategy):
     return add_integration_constant(Sum(first, second), intg)
 
 
+class ShiftedCircleRoot(IntegrationStrategy):
+  """Solve (x+1)/sqrt(2x-x^2) after shifting u=x-1."""
+  description = "complete the square and substitute u=x-1"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    radicand = Sum(Product(Number(2), x),
+      Product(Number(-1), Power(x, Number(2))))
+    return (exp.is_a(Fraction) and exp.numr == Sum(x, Number(1))
+      and exp.denr == Power(radicand, Fraction(Number(1), Number(2))))
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    radicand = Sum(Product(Number(2), x),
+      Product(Number(-1), Power(x, Number(2))))
+    root_term = Product(Number(-1),
+      Power(radicand, Fraction(Number(1), Number(2))))
+    arcsine_term = Product(Number(2),
+      TrigFunction('arcsin', Sum(x, Number(-1))))
+    return add_integration_constant(Sum(root_term, arcsine_term), intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -811,5 +836,6 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   SecSquaredRationalTangent, ReciprocalSecSquared,
   LinearOverQuadraticRoot, ExponentialQuotientDerivative,
   CompositeSquareSubstitution, PolynomialOverSquareRoot,
+  ShiftedCircleRoot,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

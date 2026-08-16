@@ -242,6 +242,16 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(repr(result),
       '((((2 / 5) * (x ^ (5 / 2))) + ((2 / 3) * (x ^ (3 / 2)))) + C)')
 
+  def test_ShiftedCircleRoot(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int ( x + 1 ) / sqrt( 2 * x - x^2 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((-1 * (((2 * x) + (-1 * (x ^ 2))) ^ (1 / 2))) + (2 * arcsin((x + -1)))) + C)')
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph
