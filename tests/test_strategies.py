@@ -493,6 +493,33 @@ class TestStrategies(unittest.TestCase):
     result = attempt_integral(parse(problem), SubLogger('test'))
     self.assertEqual('int[' in repr(result), False)
 
+  def test_TangentPowerSecantSquaredSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int tan( x ) * sec( x )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '(((tan(x) ^ 2) / 2) + C)')
+
+  def test_TangentPowerSecantSquaredSubstitutionScaledShifted(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 3 * tan( 2 * x + 1 )^4 * sec( 2 * x + 1 )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('^ 5' in repr(result), True)
+
+  def test_TangentPowerSecantSquaredSubstitutionLogarithm(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int sec( 5 * x )^2 / tan( 5 * x ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('ln(tan((5 * x)))' in repr(result), True)
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph

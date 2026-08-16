@@ -1059,6 +1059,86 @@ class SquaredSineCosineCombination(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+def _tangent_secant_product(expr):
+  """Collect c*tan(u)^p*sec(u)^q as (c, u, p, q), if possible."""
+  state = {'coefficient': Rational(1), 'phase': None,
+    'tan': Rational(0), 'sec': Rational(0), 'valid': True}
+
+  def collect(item, sign=1):
+    if not state['valid']: return
+    value = _rational_value(item)
+    if value != None:
+      if value == 0 and sign == -1: state['valid'] = False
+      else: state['coefficient'] *= value ** sign
+      return
+    if item.is_a(Product):
+      collect(item.a, sign)
+      collect(item.b, sign)
+      return
+    if item.is_a(Fraction):
+      collect(item.numr, sign)
+      collect(item.denr, -sign)
+      return
+    exponent = Rational(1)
+    trig = item
+    if item.is_a(Power):
+      exponent = _rational_value(item.exponent)
+      trig = item.base
+      if exponent == None:
+        state['valid'] = False
+        return
+    if trig.is_a(TrigFunction) and trig.name in ['tan', 'sec']:
+      if state['phase'] == None: state['phase'] = trig.arg
+      elif state['phase'] != trig.arg:
+        state['valid'] = False
+        return
+      state[trig.name] += sign * exponent
+      return
+    state['valid'] = False
+
+  collect(expr)
+  if not state['valid'] or state['phase'] == None: return None
+  return state['coefficient'], state['phase'], state['tan'], state['sec']
+
+
+class TangentPowerSecantSquaredSubstitution(IntegrationStrategy):
+  """Integrate c*tan(ax+b)^p*sec(ax+b)^2 using u=tan(ax+b)."""
+  description = "substitution u=tan(ax+b)"
+
+  @classmethod
+  def _parts(self, intg):
+    parts = _tangent_secant_product(intg.simplified().exp)
+    if parts == None: return None
+    coefficient, phase, tangent_power, secant_power = parts
+    if secant_power != 2: return None
+    phase_coefficients = _laurent_polynomial_coefficients(phase, intg.var)
+    if (phase_coefficients == None
+      or phase_coefficients.get(1, Rational(0)) == 0):
+      return None
+    if any(degree < 0 or degree > 1 for degree in phase_coefficients.keys()):
+      return None
+    return coefficient, phase, tangent_power, phase_coefficients[1]
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, phase, exponent, frequency = self._parts(intg)
+    tangent = TrigFunction('tan', phase)
+    if exponent == -1:
+      primitive = _scale_by_rational(Logarithm(tangent),
+        coefficient / frequency)
+    else:
+      new_exponent = exponent + 1
+      power = tangent if new_exponent == 1 else Power(tangent,
+        _rational_expression(new_exponent))
+      primitive = _scale_by_rational(power,
+        coefficient / (frequency * new_exponent))
+    return add_integration_constant(primitive, intg)
+
+
 class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
   """Integrate P(x)/(1+x^2) for a rational-coefficient Laurent polynomial P."""
   description = "Laurent-polynomial reduction over 1+x^2"
@@ -1420,6 +1500,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   QuadraticDerivativePowerSubstitution,
   AffineSquareRootTrigSubstitution,
   SquaredSineCosineCombination,
+  TangentPowerSecantSquaredSubstitution,
   LaurentPolynomialOverOnePlusSquare,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]
