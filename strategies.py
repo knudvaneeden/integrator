@@ -500,29 +500,6 @@ class CompositeSquareSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
-class PolynomialOverSquareRoot(IntegrationStrategy):
-  """Expand (x^2+x)/sqrt(x) into two fractional powers."""
-  description = "divide each polynomial term by sqrt(x) and use the power rule"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    expected_numr = Sum(Power(x, Number(2)), x)
-    expected_denr = Power(x, Fraction(Number(1), Number(2)))
-    return (exp.is_a(Fraction) and exp.numr == expected_numr
-      and exp.denr == expected_denr)
-
-  @classmethod
-  def apply(self, intg):
-    x = intg.var
-    first = Product(Fraction(Number(2), Number(5)),
-      Power(x, Fraction(Number(5), Number(2))))
-    second = Product(Fraction(Number(2), Number(3)),
-      Power(x, Fraction(Number(3), Number(2))))
-    return add_integration_constant(Sum(first, second), intg)
-
-
 class ShiftedCircleRoot(IntegrationStrategy):
   """Solve (x+1)/sqrt(2x-x^2) after shifting u=x-1."""
   description = "complete the square and substitute u=x-1"
@@ -1589,7 +1566,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ExpQuadraticSubstitution, CosOverOneMinusSinSquared,
   SecSquaredRationalTangent, ReciprocalSecSquared,
   LinearOverQuadraticRoot, ExponentialQuotientDerivative,
-  CompositeSquareSubstitution, PolynomialOverSquareRoot,
+  CompositeSquareSubstitution,
   ShiftedCircleRoot, SquaredFractionalPowerBinomial,
   ExponentialRationalSubstitution, ExponentialLogSubstitution,
   OneOverOnePlusCosine, ReciprocalCosSquared,
