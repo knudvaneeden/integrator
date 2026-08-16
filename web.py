@@ -40,7 +40,8 @@ def api_solve():
 
 @app.route("/")
 def solver():
-  return render_template('solver.html')
+  problem = request.args.get('problem', 'int x^2 dx')
+  return render_template('solver.html', problem=problem)
 
 
 if __name__ == "__main__":
