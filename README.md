@@ -20,8 +20,21 @@ Solved:
     int x * sqrt( 1 + x ) dx
     int ( x^2 + 1 ) / sqrt( x ) dx
     int exp( x) / ( 1 + exp( x ) ) dx
+    int ( sin( x )^2 + 1 )^2 dx
+    int exp( 2 * x ) / ( 1 + exp( x ) ) dx
+    int 1 / ( 1 - cos( x ) ) dx
+    int 2 * exp( x ) / ( 2 + 3 * exp( 2 * x ) ) dx
+    int ( 2 + 3 * x^2 ) dx
+    int exp( x ) * cos( x ) dx
+    int exp( x ) * sin( x ) dx
+    int 2 * exp( x ) * cos( x ) dx
+    int sec( x )^n dx
+    int sec( x )^3 dx
+    int 1 / sqrt( x^2 + m^2 + x ) dx
+    int sec( x )^2 * tan( x ) dx
     int ( 3 * x^7 - 2 * x^3 + 5 ) / ( 1 + x^2 ) dx
     int sec(x)^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
+    int sec( x )^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
     int 1 / sec( x )^2 dx
     int x / sqrt( x^2 + 2 * x + 5 ) dx
     int ( x^2 + x ) / sqrt( x ) dx
@@ -35,6 +48,7 @@ Solved:
     int (arcsin(x) + sin(x))^2 * ((1 - x^2)^(-1/2) + cos(x)) dx
     int cos( 3 * x ) / ( 1 - sin( 3 * x ))^2 dx
     int x^4 / ( 1 - x^2 )^( 5 / 2 ) dx
+    int x^4 / ( 1 - x^2 )^(5/2) dx
     int tan(x)^5 * sec(x)^2 dx
     int 1 / (1 + x^4)^2 dx
     int x^2 / sqrt( 1 - x^2 ) dx
@@ -127,6 +141,9 @@ button above the graph to print it or save it as a PDF from the browser.
 # Integrator
 This is a symbolic integrator based on James Slagle's 1961 thesis.
 The goal of this project is to solve integrals symbolically
+
+The integration-rule generalization audit is documented in
+`AD_HOC_RULE_AUDIT.md`.
 in an accessible manner.
 The machine will work to solve the integration problem, and will share its
 thoughts and methods with you.

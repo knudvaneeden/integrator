@@ -10,7 +10,7 @@ and can apply itself to an expression.
 
 from elements import *
 from fractions import Fraction as Rational
-from math import comb
+from math import comb, isqrt
 
 # add on integration uncertainty variable
 def add_integration_constant(expr, original_intg):
@@ -301,64 +301,6 @@ class ConstantBaseExponential(IntegrationStrategy):
     return add_integration_constant(Fraction(exp, denr), intg)
 
 
-class ExpQuadraticSubstitution(IntegrationStrategy):
-  """Solve x*exp(x^2) by the substitution u=x^2."""
-  description = "substitution u=x^2 in x exp(x^2)"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    if not exp.is_a(Product): return False
-    for factor, exponential in [(exp.a, exp.b), (exp.b, exp.a)]:
-      if (factor == intg.var and exponential.is_a(TrigFunction)
-          and exponential.name == 'exp'
-          and exponential.arg.is_a(Power)
-          and exponential.arg.base == intg.var
-          and exponential.arg.exponent == Number(2)):
-        return True
-    return False
-
-  @classmethod
-  def apply(self, intg):
-    exp = intg.simplified().exp
-    exponential = exp.b if exp.a == intg.var else exp.a
-    primitive = Product(Fraction(Number(1), Number(2)), exponential)
-    return add_integration_constant(primitive, intg)
-
-
-class CosOverOneMinusSinSquared(IntegrationStrategy):
-  """Solve cos(ax+b)/(1-sin(ax+b))^2 by substitution."""
-  description = "substitution u=1-sin(ax+b)"
-
-  @classmethod
-  def _parts(self, intg):
-    exp = intg.simplified().exp
-    if (not exp.is_a(Fraction) or not exp.numr.is_a(TrigFunction)
-        or exp.numr.name != 'cos' or not exp.denr.is_a(Power)
-        or exp.denr.exponent != Number(2)):
-      return None
-    inner = exp.denr.base
-    if (not inner.is_a(Sum) or inner.a != Number(1)
-        or not inner.b.is_a(Product) or inner.b.a != Number(-1)
-        or not inner.b.b.is_a(TrigFunction)
-        or inner.b.b.name != 'sin'
-        or inner.b.b.arg != exp.numr.arg):
-      return None
-    coefficient = linear_coefficient(exp.numr.arg, intg.var)
-    if coefficient in [None, Number(0)]: return None
-    return inner, coefficient
-
-  @classmethod
-  def applicable(self, intg):
-    return self._parts(intg) != None
-
-  @classmethod
-  def apply(self, intg):
-    inner, coefficient = self._parts(intg)
-    primitive = Fraction(Number(1), Product(coefficient, inner))
-    return add_integration_constant(primitive, intg)
-
-
 class SecSquaredRationalTangent(IntegrationStrategy):
   """Solve sec(u)^2/(1+sec(u)^2-3*tan(u)) by substitution."""
   description = "substitution u=tan(x) followed by partial fractions"
@@ -426,50 +368,6 @@ class ReciprocalSecSquared(IntegrationStrategy):
     return add_integration_constant(Sum(first, second), intg)
 
 
-class LinearOverQuadraticRoot(IntegrationStrategy):
-  """Solve x/sqrt(x^2+2x+5) by completing the square."""
-  description = "complete the square and split the numerator"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    quadratic = Sum(Sum(Power(x, Number(2)), Product(Number(2), x)),
-      Number(5))
-    return (exp.is_a(Fraction) and exp.numr == x
-      and exp.denr == Power(quadratic, Fraction(Number(1), Number(2))))
-
-  @classmethod
-  def apply(self, intg):
-    x = intg.var
-    quadratic = Sum(Sum(Power(x, Number(2)), Product(Number(2), x)),
-      Number(5))
-    root = Power(quadratic, Fraction(Number(1), Number(2)))
-    logarithm = Logarithm(Sum(Sum(x, Number(1)), root))
-    primitive = Sum(root, Product(Number(-1), logarithm))
-    return add_integration_constant(primitive, intg)
-
-
-class ExponentialQuotientDerivative(IntegrationStrategy):
-  """Recognize the derivative of exp(x)/(1+x)."""
-  description = "reverse quotient rule for exp(x)/(1+x)"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    expected_numr = Product(x, TrigFunction('exp', x))
-    expected_denr = Power(Sum(Number(1), x), Number(2))
-    return (exp.is_a(Fraction) and exp.numr == expected_numr
-      and exp.denr == expected_denr)
-
-  @classmethod
-  def apply(self, intg):
-    x = intg.var
-    primitive = Fraction(TrigFunction('exp', x), Sum(Number(1), x))
-    return add_integration_constant(primitive, intg)
-
-
 class CompositeSquareSubstitution(IntegrationStrategy):
   """Recognize f(x)^2*f'(x) for f=arcsin(x)+sin(x)."""
   description = "substitution u=arcsin(x)+sin(x)"
@@ -498,31 +396,6 @@ class CompositeSquareSubstitution(IntegrationStrategy):
     primitive = Product(Fraction(Number(1), Number(3)),
       Power(base, Number(3)))
     return add_integration_constant(primitive, intg)
-
-
-class ShiftedCircleRoot(IntegrationStrategy):
-  """Solve (x+1)/sqrt(2x-x^2) after shifting u=x-1."""
-  description = "complete the square and substitute u=x-1"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    radicand = Sum(Product(Number(2), x),
-      Product(Number(-1), Power(x, Number(2))))
-    return (exp.is_a(Fraction) and exp.numr == Sum(x, Number(1))
-      and exp.denr == Power(radicand, Fraction(Number(1), Number(2))))
-
-  @classmethod
-  def apply(self, intg):
-    x = intg.var
-    radicand = Sum(Product(Number(2), x),
-      Product(Number(-1), Power(x, Number(2))))
-    root_term = Product(Number(-1),
-      Power(radicand, Fraction(Number(1), Number(2))))
-    arcsine_term = Product(Number(2),
-      TrigFunction('arcsin', Sum(x, Number(-1))))
-    return add_integration_constant(Sum(root_term, arcsine_term), intg)
 
 
 class SquaredFractionalPowerBinomial(IntegrationStrategy):
@@ -570,44 +443,41 @@ class ExponentialRationalSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
-class ExponentialLogSubstitution(IntegrationStrategy):
-  """Solve exp(2x)*ln(1+exp(2x)) with u=1+exp(2x)."""
-  description = "substitution u=1+exp(2x) followed by integration of ln(u)"
+class ReciprocalOnePlusOrMinusCosine(IntegrationStrategy):
+  """Integrate 1/(1+cos(ax+b)) and 1/(1-cos(ax+b))."""
+  description = "half-angle identity for reciprocal one plus or minus cosine"
 
   @classmethod
-  def applicable(self, intg):
+  def _parts(self, intg):
     exp = intg.simplified().exp
-    x = intg.var
-    exp2x = TrigFunction('exp', Product(Number(2), x))
-    expected = Product(exp2x, Logarithm(Sum(Number(1), exp2x)))
-    return exp == expected
+    if (not exp.is_a(Fraction) or exp.numr != Number(1)
+      or not exp.denr.is_a(Sum)):
+      return None
+    constant = _rational_value(exp.denr.a)
+    trig = _rational_trig_term(exp.denr.b)
+    if constant == None or trig == None:
+      constant = _rational_value(exp.denr.b)
+      trig = _rational_trig_term(exp.denr.a)
+    if constant != 1 or trig == None or trig[0] != 'cos' or abs(trig[2]) != 1:
+      return None
+    phase = _laurent_polynomial_coefficients(trig[1], intg.var)
+    if phase == None or phase.get(1, Rational(0)) == 0: return None
+    if any(degree < 0 or degree > 1 for degree in phase): return None
+    return trig[1], trig[2], phase[1]
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
 
   @classmethod
   def apply(self, intg):
-    x = intg.var
-    exp2x = TrigFunction('exp', Product(Number(2), x))
-    u = Sum(Number(1), exp2x)
-    u_log_u_minus_u = Sum(Product(u, Logarithm(u)),
-      Product(Number(-1), u))
-    primitive = Product(Fraction(Number(1), Number(2)), u_log_u_minus_u)
-    return add_integration_constant(primitive, intg)
-
-
-class OneOverOnePlusCosine(IntegrationStrategy):
-  """Use 1+cos(x)=2*cos(x/2)^2."""
-  description = "half-angle identity for 1/(1+cos(x))"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    return (exp.is_a(Fraction) and exp.numr == Number(1)
-      and exp.denr == Sum(Number(1), TrigFunction('cos', x)))
-
-  @classmethod
-  def apply(self, intg):
-    half_x = Fraction(intg.var, Number(2))
-    primitive = TrigFunction('tan', half_x)
+    phase, sign, frequency = self._parts(intg)
+    half_phase = Fraction(phase, Number(2))
+    if sign == 1:
+      primitive = _scale_by_rational(TrigFunction('tan', half_phase),
+        Rational(1) / frequency)
+    else:
+      primitive = _scale_by_rational(TrigFunction('cot', half_phase),
+        Rational(-1) / frequency)
     return add_integration_constant(primitive, intg)
 
 
@@ -640,54 +510,6 @@ class ReciprocalCosSquared(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
-class VariableTimesLinearBinomial(IntegrationStrategy):
-  """Expand x*(x+1) and integrate its two powers."""
-  description = "distribute x over x+1 and use the power rule"
-
-  @classmethod
-  def applicable(self, intg):
-    x = intg.var
-    return intg.simplified().exp == Product(x, Sum(x, Number(1)))
-
-  @classmethod
-  def apply(self, intg):
-    x = intg.var
-    cubic = Product(Fraction(Number(1), Number(3)), Power(x, Number(3)))
-    quadratic = Product(Fraction(Number(1), Number(2)), Power(x, Number(2)))
-    return add_integration_constant(Sum(cubic, quadratic), intg)
-
-
-class SineSquaredTimesCosine(IntegrationStrategy):
-  """Solve sin(u)^2*cos(u) by substituting v=sin(u)."""
-  description = "substitution u=sin(x)"
-
-  @classmethod
-  def _parts(self, intg):
-    exp = intg.simplified().exp
-    if not exp.is_a(Product): return None
-    for sine_power, cosine in [(exp.a, exp.b), (exp.b, exp.a)]:
-      if (sine_power.is_a(Power) and sine_power.exponent == Number(2)
-          and sine_power.base.is_a(TrigFunction)
-          and sine_power.base.name == 'sin'
-          and cosine.is_a(TrigFunction) and cosine.name == 'cos'
-          and cosine.arg == sine_power.base.arg):
-        coefficient = linear_coefficient(cosine.arg, intg.var)
-        if coefficient not in [None, Number(0)]:
-          return sine_power.base, coefficient
-    return None
-
-  @classmethod
-  def applicable(self, intg):
-    return self._parts(intg) != None
-
-  @classmethod
-  def apply(self, intg):
-    sine, coefficient = self._parts(intg)
-    denominator = Product(Number(3), coefficient).simplified()
-    primitive = Fraction(Power(sine, Number(3)), denominator).simplified()
-    return add_integration_constant(primitive, intg)
-
-
 class SineFourthCosineFourth(IntegrationStrategy):
   """Use power reduction for sin(x)^4*cos(x)^4."""
   description = "trigonometric power reduction for sin(x)^4 cos(x)^4"
@@ -708,47 +530,6 @@ class SineFourthCosineFourth(IntegrationStrategy):
       TrigFunction('sin', Product(Number(4), x)))
     sine8 = Fraction(TrigFunction('sin', Product(Number(8), x)), Number(1024))
     primitive = Sum(Sum(linear, sine4), sine8)
-    return add_integration_constant(primitive, intg)
-
-
-class SineFourthOverCosineFourth(IntegrationStrategy):
-  """Rewrite sin(x)^4/cos(x)^4 as tan(x)^4 and reduce the power."""
-  description = "tangent-power reduction for sin(x)^4/cos(x)^4"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    return (exp.is_a(Fraction)
-      and exp.numr == Power(TrigFunction('sin', x), Number(4))
-      and exp.denr == Power(TrigFunction('cos', x), Number(4)))
-
-  @classmethod
-  def apply(self, intg):
-    x = intg.var
-    tangent = TrigFunction('tan', x)
-    cubic = Fraction(Power(tangent, Number(3)), Number(3))
-    primitive = Sum(Sum(cubic, Product(Number(-1), tangent)), x)
-    return add_integration_constant(primitive, intg)
-
-
-class ReciprocalCotangentFourth(IntegrationStrategy):
-  """Rewrite 1/cot(x)^4 as tan(x)^4 and reduce the power."""
-  description = "tangent-power reduction for 1/cot(x)^4"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    return (exp.is_a(Fraction) and exp.numr == Number(1)
-      and exp.denr == Power(TrigFunction('cot', x), Number(4)))
-
-  @classmethod
-  def apply(self, intg):
-    x = intg.var
-    tangent = TrigFunction('tan', x)
-    cubic = Fraction(Power(tangent, Number(3)), Number(3))
-    primitive = Sum(Sum(cubic, Product(Number(-1), tangent)), x)
     return add_integration_constant(primitive, intg)
 
 
@@ -871,6 +652,139 @@ def _scale_by_rational(expr, value):
   return Fraction(Product(Number(value.numerator), expr), Number(value.denominator))
 
 
+def _rational_square_root_expression(value):
+  numerator_root = isqrt(value.numerator)
+  denominator_root = isqrt(value.denominator)
+  if (numerator_root * numerator_root == value.numerator
+    and denominator_root * denominator_root == value.denominator):
+    return _rational_expression(Rational(numerator_root, denominator_root))
+  return Power(_rational_expression(value), Fraction(Number(1), Number(2)))
+
+
+class LinearOverQuadraticSquareRoot(IntegrationStrategy):
+  """Integrate (m*x+n)/sqrt(a*x^2+b*x+c) for rational coefficients."""
+  description = "linear numerator over a general quadratic square root"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or not exp.denr.is_a(Power)
+      or exp.denr.exponent != Fraction(Number(1), Number(2))):
+      return None
+    numerator = _laurent_polynomial_coefficients(exp.numr, intg.var)
+    quadratic = _laurent_polynomial_coefficients(exp.denr.base, intg.var)
+    if numerator == None or quadratic == None: return None
+    if any(degree < 0 or degree > 1 for degree in numerator.keys()): return None
+    if any(degree < 0 or degree > 2 for degree in quadratic.keys()): return None
+    a = quadratic.get(2, Rational(0))
+    if a == 0: return None
+    return (exp.denr.base, numerator.get(1, Rational(0)),
+      numerator.get(0, Rational(0)), a,
+      quadratic.get(1, Rational(0)), quadratic.get(0, Rational(0)))
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    quadratic, m, n, a, b, c = self._parts(intg)
+    x = intg.var
+    root = Power(quadratic, Fraction(Number(1), Number(2)))
+    terms = []
+    if m != 0:
+      terms.append(_scale_by_rational(root, m / a))
+    remainder = n - m * b / (Rational(2) * a)
+    if remainder != 0:
+      if a > 0:
+        sqrt_a = _rational_square_root_expression(a)
+        sqrt_a_value = _rational_value(sqrt_a)
+        root_part = (_scale_by_rational(root, sqrt_a_value)
+          if sqrt_a_value != None else Product(sqrt_a, root))
+        log_arg = Sum(root_part,
+          Sum(_scale_by_rational(x, a),
+            _rational_expression(b / Rational(2))))
+        standard = Fraction(Logarithm(log_arg), sqrt_a)
+      else:
+        discriminant = b * b - Rational(4) * a * c
+        if discriminant <= 0: return add_integration_constant(Number(0), intg)
+        sqrt_discriminant = _rational_square_root_expression(discriminant)
+        sqrt_discriminant_value = _rational_value(sqrt_discriminant)
+        if sqrt_discriminant_value != None:
+          asin_arg = Sum(_scale_by_rational(x,
+              Rational(-2) * a / sqrt_discriminant_value),
+            _rational_expression(-b / sqrt_discriminant_value))
+        else:
+          asin_arg = Fraction(Sum(Product(_rational_expression(Rational(-2) * a), x),
+            _rational_expression(-b)), sqrt_discriminant)
+        sqrt_minus_a = _rational_square_root_expression(-a)
+        standard = Fraction(TrigFunction('arcsin', asin_arg), sqrt_minus_a)
+      terms.append(_scale_by_rational(standard, remainder))
+    primitive = terms[0] if terms else Number(0)
+    for term in terms[1:]: primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
+
+
+def _symbolic_polynomial_coefficients(expr, var):
+  """Small symbolic-coefficient polynomial extractor used for quadratic roots."""
+  if expr == var: return {1: Number(1)}
+  if expr.is_a(Power) and expr.base == var and expr.exponent == Number(2):
+    return {2: Number(1)}
+  if is_constant(expr, var): return {0: expr}
+  if expr.is_a(Sum):
+    a = _symbolic_polynomial_coefficients(expr.a, var)
+    b = _symbolic_polynomial_coefficients(expr.b, var)
+    if a == None or b == None: return None
+    result = dict(a)
+    for degree, coefficient in b.items():
+      result[degree] = (Sum(result[degree], coefficient).simplified()
+        if degree in result else coefficient)
+    return result
+  if expr.is_a(Product):
+    if is_constant(expr.a, var):
+      monomial = _symbolic_polynomial_coefficients(expr.b, var)
+      if monomial != None and len(monomial) == 1:
+        degree, coefficient = list(monomial.items())[0]
+        return {degree: Product(expr.a, coefficient).simplified()}
+    if is_constant(expr.b, var):
+      monomial = _symbolic_polynomial_coefficients(expr.a, var)
+      if monomial != None and len(monomial) == 1:
+        degree, coefficient = list(monomial.items())[0]
+        return {degree: Product(expr.b, coefficient).simplified()}
+  return None
+
+
+class MonicQuadraticParameterSquareRoot(IntegrationStrategy):
+  """Integrate 1/sqrt(x^2+B*x+C) with symbolic constants B and C."""
+  description = "monic quadratic square-root standard form with symbolic parameters"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or exp.numr != Number(1)
+      or not exp.denr.is_a(Power)
+      or exp.denr.exponent != Fraction(Number(1), Number(2))):
+      return None
+    coefficients = _symbolic_polynomial_coefficients(exp.denr.base, intg.var)
+    if coefficients == None or coefficients.get(2) != Number(1): return None
+    if any(degree < 0 or degree > 2 for degree in coefficients): return None
+    return exp.denr.base, coefficients.get(1, Number(0))
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    quadratic, linear_coefficient_expr = self._parts(intg)
+    root = Power(quadratic, Fraction(Number(1), Number(2)))
+    linear_value = _rational_value(linear_coefficient_expr)
+    half_linear = (_rational_expression(linear_value / Rational(2))
+      if linear_value != None else Product(Fraction(Number(1), Number(2)),
+        linear_coefficient_expr).simplified())
+    primitive = Logarithm(Sum(root, Sum(intg.var, half_linear)))
+    return add_integration_constant(primitive, intg)
+
+
 def _rational_value(expr):
   if expr.is_a(Number) and isinstance(expr.n, int):
     return Rational(expr.n)
@@ -948,6 +862,14 @@ class PolynomialTimesAffinePowerSubstitution(IntegrationStrategy):
     if exp.is_a(Product):
       if exp.a.is_a(Power): power, multiplier = exp.a, exp.b
       elif exp.b.is_a(Power): power, multiplier = exp.b, exp.a
+      else:
+        for candidate_base, candidate_multiplier in [(exp.a, exp.b), (exp.b, exp.a)]:
+          base_coefficients = _laurent_polynomial_coefficients(candidate_base, intg.var)
+          if (base_coefficients != None
+            and base_coefficients.get(1, Rational(0)) != 0
+            and all(degree in [0, 1] for degree in base_coefficients.keys())):
+            power, multiplier = Power(candidate_base, Number(1)), candidate_multiplier
+            break
     elif exp.is_a(Power):
       power, multiplier = exp, Number(1)
     elif exp.is_a(Fraction):
@@ -1059,6 +981,154 @@ def _rational_trig_term(expr):
       term = _rational_trig_term(expr.numr)
       if term != None: return term[0], term[1], term[2] / denominator
   return None
+
+
+def _constant_plus_trig(expr):
+  """Return (d, e, trig) for d+e*trig(phase), including d=0."""
+  direct = _rational_trig_term(expr)
+  if direct != None:
+    return Rational(0), direct[2], TrigFunction(direct[0], direct[1])
+  if not expr.is_a(Sum): return None
+  constant = _rational_value(expr.a)
+  trig_term = _rational_trig_term(expr.b)
+  if constant == None or trig_term == None:
+    constant = _rational_value(expr.b)
+    trig_term = _rational_trig_term(expr.a)
+  if constant == None or trig_term == None or trig_term[2] == 0: return None
+  return constant, trig_term[2], TrigFunction(trig_term[0], trig_term[1])
+
+
+class TrigBinomialPowerSubstitution(IntegrationStrategy):
+  """Integrate c*f'(u)*(d+e*f(u))^p for f=sin or cos and affine u."""
+  description = "substitution v=d+e*sin(ax+b) or v=d+e*cos(ax+b)"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    derivative_term = None
+    base = None
+    exponent = None
+    if exp.is_a(Fraction):
+      derivative_term = _rational_trig_term(exp.numr)
+      if exp.denr.is_a(Power):
+        denr_exponent = _rational_value(exp.denr.exponent)
+        if denr_exponent != None:
+          base, exponent = exp.denr.base, -denr_exponent
+      else:
+        base, exponent = exp.denr, Rational(-1)
+    elif exp.is_a(Product):
+      for derivative_candidate, power_candidate in [(exp.a, exp.b), (exp.b, exp.a)]:
+        candidate = _rational_trig_term(derivative_candidate)
+        if candidate != None:
+          derivative_term = candidate
+          if power_candidate.is_a(Power):
+            power_value = _rational_value(power_candidate.exponent)
+            if power_value != None:
+              base, exponent = power_candidate.base, power_value
+          else:
+            base, exponent = power_candidate, Rational(1)
+          break
+    if derivative_term == None or base == None or exponent == None: return None
+    binomial = _constant_plus_trig(base)
+    if binomial == None: return None
+    unused_constant, inner_coefficient, inner_trig = binomial
+    derivative_name, derivative_phase, outer_coefficient = derivative_term
+    if inner_trig.arg != derivative_phase: return None
+    if inner_trig.name == 'sin' and derivative_name == 'cos': derivative_sign = Rational(1)
+    elif inner_trig.name == 'cos' and derivative_name == 'sin': derivative_sign = Rational(-1)
+    else: return None
+    phase = _laurent_polynomial_coefficients(derivative_phase, intg.var)
+    if phase == None or phase.get(1, Rational(0)) == 0: return None
+    if any(degree < 0 or degree > 1 for degree in phase.keys()): return None
+    substitution_factor = (outer_coefficient /
+      (inner_coefficient * derivative_sign * phase[1]))
+    return base, exponent, substitution_factor
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    base, exponent, substitution_factor = self._parts(intg)
+    if exponent == -1:
+      primitive = _scale_by_rational(Logarithm(base), substitution_factor)
+    else:
+      new_exponent = exponent + 1
+      power = base if new_exponent == 1 else Power(base,
+        _rational_expression(new_exponent))
+      primitive = _scale_by_rational(power, substitution_factor / new_exponent)
+    return add_integration_constant(primitive, intg)
+
+
+def _rational_trig_square(expr):
+  coefficient = Rational(1)
+  power = expr
+  if expr.is_a(Product):
+    left = _rational_value(expr.a)
+    right = _rational_value(expr.b)
+    if left != None: coefficient, power = left, expr.b
+    elif right != None: coefficient, power = right, expr.a
+  if (power.is_a(Power) and power.exponent == Number(2)
+    and power.base.is_a(TrigFunction) and power.base.name in ['sin', 'cos']):
+    return coefficient, power.base
+  return None
+
+
+class TrigSquareBinomialIntegerPower(IntegrationStrategy):
+  """Integrate (d+e*sin(u)^2)^N or cosine for nonnegative integer N."""
+  description = "binomial expansion and even trigonometric-power reduction"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Power) or not exp.base.is_a(Sum): return None
+    exponent = _rational_value(exp.exponent)
+    if exponent == None or exponent.denominator != 1 or exponent < 0: return None
+    constant = _rational_value(exp.base.a)
+    trig_square = _rational_trig_square(exp.base.b)
+    if constant == None or trig_square == None:
+      constant = _rational_value(exp.base.b)
+      trig_square = _rational_trig_square(exp.base.a)
+    if constant == None or trig_square == None: return None
+    coefficient, trig = trig_square
+    phase = _laurent_polynomial_coefficients(trig.arg, intg.var)
+    if phase == None or phase.get(1, Rational(0)) == 0: return None
+    if any(degree < 0 or degree > 1 for degree in phase): return None
+    return constant, coefficient, trig, int(exponent), phase[1]
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    constant, coefficient, trig, exponent, frequency = self._parts(intg)
+    sine = TrigFunction('sin', trig.arg)
+    cosine = TrigFunction('cos', trig.arg)
+
+    def even_power_integral(n):
+      if n == 0: return _scale_by_rational(trig.arg, Rational(1) / frequency)
+      if trig.name == 'sin':
+        sine_power = sine if n - 1 == 1 else Power(sine, Number(n - 1))
+        leading = _scale_by_rational(Product(sine_power, cosine),
+          Rational(-1, n) / frequency)
+      else:
+        cosine_power = cosine if n - 1 == 1 else Power(cosine, Number(n - 1))
+        leading = _scale_by_rational(Product(sine, cosine_power),
+          Rational(1, n) / frequency)
+      return Sum(leading, _scale_by_rational(even_power_integral(n - 2),
+        Rational(n - 1, n)))
+
+    terms = []
+    for k in range(exponent + 1):
+      binomial_coefficient = (Rational(comb(exponent, k))
+        * constant ** (exponent - k) * coefficient ** k)
+      if binomial_coefficient != 0:
+        terms.append(_scale_by_rational(even_power_integral(2 * k),
+          binomial_coefficient))
+    primitive = terms[0] if terms else Number(0)
+    for term in terms[1:]: primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
 
 
 class SineCosineLinearCombination(IntegrationStrategy):
@@ -1176,6 +1246,140 @@ def _tangent_secant_product(expr):
   return state['coefficient'], state['phase'], state['tan'], state['sec']
 
 
+class TangentIntegerPowerReduction(IntegrationStrategy):
+  """Integrate tan(ax+b)^n for every nonnegative integer n."""
+  description = "integer tangent-power reduction recurrence"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    phase = None
+    exponent = None
+    if exp.is_a(Power) and exp.base.is_a(TrigFunction) and exp.base.name == 'tan':
+      phase, exponent = exp.base.arg, _rational_value(exp.exponent)
+    elif exp.is_a(TrigFunction) and exp.name == 'tan':
+      phase, exponent = exp.arg, Rational(1)
+    elif exp.is_a(Fraction):
+      if (exp.numr.is_a(Power) and exp.denr.is_a(Power)
+        and exp.numr.base.is_a(TrigFunction) and exp.numr.base.name == 'sin'
+        and exp.denr.base.is_a(TrigFunction) and exp.denr.base.name == 'cos'
+        and exp.numr.base.arg == exp.denr.base.arg
+        and exp.numr.exponent == exp.denr.exponent):
+        phase, exponent = exp.numr.base.arg, _rational_value(exp.numr.exponent)
+      elif (exp.numr == Number(1) and exp.denr.is_a(Power)
+        and exp.denr.base.is_a(TrigFunction) and exp.denr.base.name == 'cot'):
+        phase, exponent = exp.denr.base.arg, _rational_value(exp.denr.exponent)
+    if (phase == None or exponent == None or exponent.denominator != 1
+      or exponent < 0): return None
+    phase_coefficients = _laurent_polynomial_coefficients(phase, intg.var)
+    if phase_coefficients == None or phase_coefficients.get(1, Rational(0)) == 0:
+      return None
+    if any(degree < 0 or degree > 1 for degree in phase_coefficients): return None
+    return phase, int(exponent), phase_coefficients[1]
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, exponent, frequency = self._parts(intg)
+    tangent = TrigFunction('tan', phase)
+    terms = []
+    sign = Rational(1)
+    n = exponent
+    while n >= 2:
+      power = tangent if n - 1 == 1 else Power(tangent, Number(n - 1))
+      terms.append(_scale_by_rational(power, sign / (frequency * (n - 1))))
+      sign = -sign
+      n -= 2
+    if n == 0:
+      terms.append(_scale_by_rational(phase, sign / frequency))
+    else:
+      terms.append(_scale_by_rational(Logarithm(TrigFunction('cos', phase)),
+        -sign / frequency))
+    primitive = terms[0]
+    for term in terms[1:]: primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
+
+
+class SecantIntegerPowerReduction(IntegrationStrategy):
+  """Integrate sec(ax+b)^n for every nonnegative integer n."""
+  description = "integer secant-power reduction recurrence"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if exp.is_a(Power) and exp.base.is_a(TrigFunction) and exp.base.name == 'sec':
+      phase, exponent = exp.base.arg, _rational_value(exp.exponent)
+    elif exp.is_a(TrigFunction) and exp.name == 'sec':
+      phase, exponent = exp.arg, Rational(1)
+    else: return None
+    if exponent == None or exponent.denominator != 1 or exponent < 0: return None
+    phase_coefficients = _laurent_polynomial_coefficients(phase, intg.var)
+    if phase_coefficients == None or phase_coefficients.get(1, Rational(0)) == 0:
+      return None
+    if any(degree < 0 or degree > 1 for degree in phase_coefficients): return None
+    return phase, int(exponent), phase_coefficients[1]
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, exponent, frequency = self._parts(intg)
+    secant = TrigFunction('sec', phase)
+    tangent = TrigFunction('tan', phase)
+
+    def reduce_power(n):
+      if n == 0: return _scale_by_rational(phase, Rational(1) / frequency)
+      if n == 1:
+        return _scale_by_rational(Logarithm(Sum(secant, tangent)),
+          Rational(1) / frequency)
+      if n == 2: leading_power = Number(1)
+      elif n == 3: leading_power = secant
+      else: leading_power = Power(secant, Number(n - 2))
+      leading = _scale_by_rational(Product(leading_power, tangent).simplified(),
+        Rational(1, n - 1) / frequency)
+      if n == 2: return leading
+      return Sum(leading, _scale_by_rational(reduce_power(n - 2),
+        Rational(n - 2, n - 1)))
+
+    return add_integration_constant(reduce_power(exponent), intg)
+
+
+class SecantArbitraryPowerHypergeometric(IntegrationStrategy):
+  """Integrate sec(ax+b)^p for a symbolic constant exponent p."""
+  description = "hypergeometric form for an arbitrary constant secant power"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Power) or not exp.base.is_a(TrigFunction)
+      or exp.base.name != 'sec' or not is_constant(exp.exponent, intg.var)):
+      return None
+    if _rational_value(exp.exponent) != None: return None
+    phase_coefficients = _laurent_polynomial_coefficients(exp.base.arg, intg.var)
+    if phase_coefficients == None or phase_coefficients.get(1, Rational(0)) == 0:
+      return None
+    if any(degree < 0 or degree > 1 for degree in phase_coefficients): return None
+    return exp.base.arg, exp.exponent, phase_coefficients[1]
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, exponent, frequency = self._parts(intg)
+    sine = TrigFunction('sin', phase)
+    second_parameter = Fraction(Sum(exponent, Number(1)), Number(2))
+    hypergeometric = Hypergeometric2F1(Fraction(Number(1), Number(2)),
+      second_parameter, Fraction(Number(3), Number(2)), Power(sine, Number(2)))
+    primitive = _scale_by_rational(Product(sine, hypergeometric),
+      Rational(1) / frequency)
+    return add_integration_constant(primitive, intg)
+
+
 class TangentPowerSecantSquaredSubstitution(IntegrationStrategy):
   """Integrate c*tan(ax+b)^p*sec(ax+b)^2 using u=tan(ax+b)."""
   description = "substitution u=tan(ax+b)"
@@ -1233,6 +1437,189 @@ def _rational_exponential_term(expr):
       term = _rational_exponential_term(expr.numr)
       if term != None: return term[0] / denominator, term[1]
   return None
+
+
+def _polynomial_times_exponential(expr, var):
+  """Return (polynomial coefficients, exponential) for P(x)*exp(phase)."""
+  if expr.is_a(TrigFunction) and expr.name == 'exp':
+    return {0: Rational(1)}, expr
+  if not expr.is_a(Product): return None
+  for polynomial_expr, exponential in [(expr.a, expr.b), (expr.b, expr.a)]:
+    if exponential.is_a(TrigFunction) and exponential.name == 'exp':
+      polynomial = _laurent_polynomial_coefficients(polynomial_expr, var)
+      if polynomial != None and all(degree >= 0 for degree in polynomial):
+        return polynomial, exponential
+  return None
+
+
+def _exponential_trig_product(expr):
+  state = {'coefficient': Rational(1), 'exponential': None,
+    'trig': None, 'valid': True}
+
+  def collect(item):
+    value = _rational_value(item)
+    if value != None:
+      state['coefficient'] *= value
+    elif item.is_a(Product):
+      collect(item.a)
+      collect(item.b)
+    elif item.is_a(TrigFunction) and item.name == 'exp' and state['exponential'] == None:
+      state['exponential'] = item
+    elif (item.is_a(TrigFunction) and item.name in ['sin', 'cos']
+      and state['trig'] == None):
+      state['trig'] = item
+    else:
+      state['valid'] = False
+
+  collect(expr)
+  if not state['valid'] or state['exponential'] == None or state['trig'] == None:
+    return None
+  return state['coefficient'], state['exponential'], state['trig']
+
+
+class ExponentialTrigProduct(IntegrationStrategy):
+  """Integrate c*exp(ax+b)*sin(mx+n) or cosine."""
+  description = "general exponential-trigonometric product"
+
+  @classmethod
+  def _parts(self, intg):
+    parts = _exponential_trig_product(intg.simplified().exp)
+    if parts == None: return None
+    coefficient, exponential, trig = parts
+    exp_phase = _laurent_polynomial_coefficients(exponential.arg, intg.var)
+    trig_phase = _laurent_polynomial_coefficients(trig.arg, intg.var)
+    if exp_phase == None or trig_phase == None: return None
+    if any(d < 0 or d > 1 for d in exp_phase) or any(d < 0 or d > 1 for d in trig_phase):
+      return None
+    a = exp_phase.get(1, Rational(0))
+    m = trig_phase.get(1, Rational(0))
+    if a == 0 or m == 0: return None
+    return coefficient, exponential, trig, a, m
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, exponential, trig, a, m = self._parts(intg)
+    sine = TrigFunction('sin', trig.arg)
+    cosine = TrigFunction('cos', trig.arg)
+    if trig.name == 'cos':
+      combination = Sum(_scale_by_rational(cosine, a),
+        _scale_by_rational(sine, m))
+    else:
+      combination = Sum(_scale_by_rational(sine, a),
+        _scale_by_rational(cosine, -m))
+    primitive = _scale_by_rational(Product(exponential, combination),
+      coefficient / (a * a + m * m))
+    return add_integration_constant(primitive, intg)
+
+
+class ExponentialOverLinearQuotientDerivative(IntegrationStrategy):
+  """Recognize c*d/dx(exp(ax+b)/(m*x+n))."""
+  description = "reverse quotient rule for an exponential over a linear function"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or not exp.denr.is_a(Power)
+      or exp.denr.exponent != Number(2)):
+      return None
+    numerator = _polynomial_times_exponential(exp.numr, intg.var)
+    linear = _laurent_polynomial_coefficients(exp.denr.base, intg.var)
+    if numerator == None or linear == None: return None
+    polynomial, exponential = numerator
+    phase = _laurent_polynomial_coefficients(exponential.arg, intg.var)
+    if phase == None or phase.get(1, Rational(0)) == 0: return None
+    if any(d < 0 or d > 1 for d in phase) or any(d < 0 or d > 1 for d in linear):
+      return None
+    m = linear.get(1, Rational(0))
+    if m == 0: return None
+    n = linear.get(0, Rational(0))
+    a = phase[1]
+    expected = {1: a * m, 0: a * n - m}
+    pivot = 1 if expected[1] != 0 else 0
+    if expected[pivot] == 0: return None
+    coefficient = polynomial.get(pivot, Rational(0)) / expected[pivot]
+    degrees = set(polynomial.keys()) | set(expected.keys())
+    if coefficient == 0 or not all(polynomial.get(d, Rational(0)) ==
+      coefficient * expected.get(d, Rational(0)) for d in degrees):
+      return None
+    return exponential, exp.denr.base, coefficient
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    exponential, linear, coefficient = self._parts(intg)
+    primitive = _scale_by_rational(Fraction(exponential, linear), coefficient)
+    return add_integration_constant(primitive, intg)
+
+
+class PolynomialDerivativeExponentialSubstitution(IntegrationStrategy):
+  """Integrate c*Q'(x)*exp(Q(x)) for a rational polynomial Q."""
+  description = "substitution u=Q(x) in a polynomial derivative times exp(Q(x))"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return None
+    for factor, exponential in [(exp.a, exp.b), (exp.b, exp.a)]:
+      if not exponential.is_a(TrigFunction) or exponential.name != 'exp': continue
+      base = _laurent_polynomial_coefficients(exponential.arg, intg.var)
+      multiplier = _laurent_polynomial_coefficients(factor, intg.var)
+      if base == None or multiplier == None or any(d < 0 for d in base): continue
+      derivative = dict((degree - 1, Rational(degree) * coefficient)
+        for degree, coefficient in base.items() if degree > 0 and coefficient != 0)
+      if not derivative: continue
+      pivot = max(derivative.keys())
+      coefficient = multiplier.get(pivot, Rational(0)) / derivative[pivot]
+      if coefficient == 0: continue
+      degrees = set(derivative.keys()) | set(multiplier.keys())
+      if all(multiplier.get(d, Rational(0)) == coefficient * derivative.get(d, Rational(0))
+          for d in degrees):
+        return exponential, coefficient
+    return None
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    exponential, coefficient = self._parts(intg)
+    return add_integration_constant(_scale_by_rational(exponential, coefficient), intg)
+
+
+class ExponentialBinomialLogSubstitution(IntegrationStrategy):
+  """Integrate c*exp(ax+b)*ln(d+e*exp(ax+b))."""
+  description = "substitution u=d+e*exp(ax+b) followed by integration of ln(u)"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return None
+    for exponential_expr, logarithm in [(exp.a, exp.b), (exp.b, exp.a)]:
+      exponential = _rational_exponential_term(exponential_expr)
+      if exponential == None or not logarithm.is_a(Logarithm): continue
+      binomial = _constant_plus_exponential(logarithm.arg)
+      if binomial == None or binomial[2] != exponential[1]: continue
+      phase = _laurent_polynomial_coefficients(exponential[1], intg.var)
+      if phase == None or phase.get(1, Rational(0)) == 0: continue
+      if any(degree < 0 or degree > 1 for degree in phase): continue
+      return exponential[0], logarithm.arg, binomial[1], phase[1]
+    return None
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, base, exponential_coefficient, frequency = self._parts(intg)
+    factor = coefficient / (exponential_coefficient * frequency)
+    primitive = Sum(Product(base, Logarithm(base)), Product(Number(-1), base))
+    return add_integration_constant(_scale_by_rational(primitive, factor), intg)
 
 
 def _constant_plus_exponential(expr):
@@ -1303,6 +1690,55 @@ class ExponentialBinomialPowerSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class ExponentialQuadraticDenominatorSubstitution(IntegrationStrategy):
+  """Integrate c*exp(u)/(d+e*exp(2u)) for affine u."""
+  description = "substitution t=exp(ax+b) in a quadratic exponential denominator"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Fraction): return None
+    numerator = _rational_exponential_term(exp.numr)
+    denominator = _constant_plus_exponential(exp.denr)
+    if numerator == None or denominator == None: return None
+    d, e, denominator_phase = denominator
+    coefficient, numerator_phase = numerator
+    numerator_coefficients = _laurent_polynomial_coefficients(numerator_phase, intg.var)
+    denominator_coefficients = _laurent_polynomial_coefficients(denominator_phase, intg.var)
+    if numerator_coefficients == None or denominator_coefficients == None: return None
+    degrees = set(numerator_coefficients.keys()) | set(denominator_coefficients.keys())
+    if not all(denominator_coefficients.get(k, Rational(0)) ==
+      Rational(2) * numerator_coefficients.get(k, Rational(0)) for k in degrees):
+      return None
+    frequency = numerator_coefficients.get(1, Rational(0))
+    if frequency == 0 or d == 0 or e == 0: return None
+    return coefficient, TrigFunction('exp', numerator_phase), d, e, frequency
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, exponential, d, e, frequency = self._parts(intg)
+    if d * e > 0:
+      sqrt_product = _rational_square_root_expression(abs(d * e))
+      sqrt_ratio = _rational_square_root_expression(abs(e / d))
+      argument = Product(sqrt_ratio, exponential).simplified()
+      standard = Fraction(TrigFunction('arctan', argument), sqrt_product)
+      sign = Rational(1) if d > 0 else Rational(-1)
+    else:
+      sqrt_d = _rational_square_root_expression(abs(d))
+      sqrt_e = _rational_square_root_expression(abs(e))
+      plus = Sum(sqrt_d, Product(sqrt_e, exponential))
+      minus = Sum(sqrt_d, Product(Number(-1), Product(sqrt_e, exponential)))
+      sqrt_product = _rational_square_root_expression(abs(d * e))
+      standard = Fraction(Logarithm(Fraction(plus, minus)),
+        Product(Number(2), sqrt_product))
+      sign = Rational(1) if d > 0 else Rational(-1)
+    primitive = _scale_by_rational(standard, sign * coefficient / frequency)
+    return add_integration_constant(primitive, intg)
+
+
 class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
   """Integrate P(x)/(1+x^2) for a rational-coefficient Laurent polynomial P."""
   description = "Laurent-polynomial reduction over 1+x^2"
@@ -1368,20 +1804,6 @@ class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
-
-
-class ArcTanStandardForm(IntegrationStrategy):
-  description = "standard form integral of 1/(1+x^2)"
-
-  @classmethod
-  def applicable(self, intg):
-    exp = intg.simplified().exp
-    return (exp.is_a(Fraction) and exp.numr == Number(1)
-      and _one_plus_x_squared(exp.denr, intg.var))
-
-  @classmethod
-  def apply(self, intg):
-    return add_integration_constant(TrigFunction('atan', intg.var), intg)
 
 
 class ArcSinStandardForm(IntegrationStrategy):
@@ -1459,18 +1881,14 @@ class ScreenshotExamples(IntegrationStrategy):
     keys = [
       '(1 / ((1 + (%s ^ 4)) ^ 2))' % x,
       '(cos(%s) / ((1 + (sin(%s) ^ 2)) ^ 2)' % (x, x) + ')',
-      '(cos(%s) / ((1 + sin(%s)) ^ 2))' % (x, x),
       '((%s ^ 2) / ((1 + (-1 * (%s ^ 2))) ^ (1 / 2)))' % (x, x),
       '(%s * ln(%s))' % (x, x),
-      '((tan(%s) ^ 5) * (sec(%s) ^ 2))' % (x, x),
       '(exp((2 * %s)) / (1 + exp(%s)))' % (x, x),
       '(1 / (%s * ((1 + (%s ^ 2)) ^ (1 / 2))))' % (x, x),
       '((sin(%s) ^ 2) * (cos(%s) ^ 4))' % (x, x),
       '(sin(%s) ^ 3)' % x,
       '(1 / ((%s ^ 2) + -1))' % x,
-      '(1 / (1 + (-1 * (%s ^ 2))))' % x,
-      '(%s * ((1 + %s) ^ (1 / 2)))' % (x, x),
-      'cos((%s ^ (1 / 2)))' % x]
+      '(1 / (1 + (-1 * (%s ^ 2))))' % x]
     return repr(intg.simplified().exp) in keys
 
   @classmethod
@@ -1502,10 +1920,6 @@ class ScreenshotExamples(IntegrationStrategy):
       primitive = Sum(Fraction(sinx, denr),
         Product(half, TrigFunction('atan', sinx)))
 
-    elif key == '(cos(%s) / ((1 + sin(%s)) ^ 2))' % (sx, sx):
-      primitive = Product(Number(-1),
-        Fraction(Number(1), Sum(Number(1), TrigFunction('sin', x))))
-
     elif key == '((%s ^ 2) / ((1 + (-1 * (%s ^ 2))) ^ (1 / 2)))' % (sx, sx):
       root = Power(Sum(Number(1), Product(Number(-1), Power(x, Number(2)))), half)
       primitive = Sum(Product(half, TrigFunction('asin', x)),
@@ -1515,9 +1929,6 @@ class ScreenshotExamples(IntegrationStrategy):
       x2 = Power(x, Number(2))
       primitive = Sum(Product(Fraction(x2, Number(2)), Logarithm(x)),
         Product(Fraction(Number(-1), Number(4)), x2))
-
-    elif key == '((tan(%s) ^ 5) * (sec(%s) ^ 2))' % (sx, sx):
-      primitive = Fraction(Power(TrigFunction('tan', x), Number(6)), Number(6))
 
     elif key == '(exp((2 * %s)) / (1 + exp(%s)))' % (sx, sx):
       ex = TrigFunction('exp', x)
@@ -1548,16 +1959,6 @@ class ScreenshotExamples(IntegrationStrategy):
       primitive = Sum(Product(half, Logarithm(Sum(Number(1), x))),
         Product(Fraction(Number(-1), Number(2)),
           Logarithm(Sum(Number(1), Product(Number(-1), x)))))
-
-    elif key == '(%s * ((1 + %s) ^ (1 / 2)))' % (sx, sx):
-      u = Sum(Number(1), x)
-      primitive = Sum(Product(Fraction(Number(2), Number(5)), Power(u, Fraction(Number(5), Number(2)))),
-        Product(Fraction(Number(-2), Number(3)), Power(u, Fraction(Number(3), Number(2)))))
-
-    else: # cos(sqrt(x))
-      root = Power(x, half)
-      primitive = Sum(Product(Number(2), Product(root, TrigFunction('sin', root))),
-        Product(Number(2), TrigFunction('cos', root)))
 
     return add_integration_constant(primitive, intg)
 
@@ -1652,22 +2053,25 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, SineCosineLinearCombination, DistributeAddition,
   OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, ExponentialFunction, ConstantBaseExponential,
-  ExpQuadraticSubstitution, CosOverOneMinusSinSquared,
+  PolynomialDerivativeExponentialSubstitution,
+  TrigBinomialPowerSubstitution, TrigSquareBinomialIntegerPower,
   SecSquaredRationalTangent, ReciprocalSecSquared,
-  LinearOverQuadraticRoot, ExponentialQuotientDerivative,
-  CompositeSquareSubstitution,
-  ShiftedCircleRoot, SquaredFractionalPowerBinomial,
-  ExponentialRationalSubstitution, ExponentialLogSubstitution,
-  OneOverOnePlusCosine, ReciprocalCosSquared,
-  VariableTimesLinearBinomial, SineSquaredTimesCosine,
-  SineFourthCosineFourth, SineFourthOverCosineFourth,
-  ReciprocalCotangentFourth, RationalEvenFourthProduct,
+  ExponentialOverLinearQuotientDerivative, CompositeSquareSubstitution,
+  SquaredFractionalPowerBinomial,
+  ExponentialRationalSubstitution, ExponentialBinomialLogSubstitution,
+  ReciprocalOnePlusOrMinusCosine, ReciprocalCosSquared,
+  SineFourthCosineFourth, RationalEvenFourthProduct,
+  LinearOverQuadraticSquareRoot, MonicQuadraticParameterSquareRoot,
   QuadraticDerivativePowerSubstitution,
   PolynomialTimesAffinePowerSubstitution,
   AffineSquareRootTrigSubstitution,
   SquaredSineCosineCombination,
+  TangentIntegerPowerReduction,
+  SecantIntegerPowerReduction, SecantArbitraryPowerHypergeometric,
   TangentPowerSecantSquaredSubstitution,
+  ExponentialTrigProduct,
   ExponentialBinomialPowerSubstitution,
+  ExponentialQuadraticDenominatorSubstitution,
   LaurentPolynomialOverOnePlusSquare,
-  ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
+  ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

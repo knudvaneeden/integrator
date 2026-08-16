@@ -13,6 +13,7 @@ There are a few binary composition expressions:
 - Fraction
 - Power
 - Logarithm
+- Hypergeometric2F1
 
 And finally there is the Integral expression which
 represents an indefinite integral and contains
@@ -346,6 +347,26 @@ class Logarithm(Expression):
       return r"\ln{%s}" %(self.arg.latex())
     else :
       return r"\log_{%s}{%s}" %(self.base.latex(), self.arg.latex())
+
+
+class Hypergeometric2F1(Expression):
+  """Gauss hypergeometric function 2F1(a,b;c;z)."""
+  def __init__(self, a, b, c, z):
+    self.a = a
+    self.b = b
+    self.c = c
+    self.z = z
+
+  def simplified(self):
+    return Hypergeometric2F1(self.a.simplified(), self.b.simplified(),
+      self.c.simplified(), self.z.simplified())
+
+  def __repr__(self):
+    return "hypergeometric2F1(%s, %s, %s, %s)" % (self.a, self.b, self.c, self.z)
+
+  def latex(self):
+    return r"{}_2F_1\left(%s,%s;%s;%s\right)" % (
+      self.a.latex(), self.b.latex(), self.c.latex(), self.z.latex())
 
 
 class TrigFunction(Expression):
