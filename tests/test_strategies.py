@@ -119,6 +119,7 @@ class TestStrategies(unittest.TestCase):
     problems = [
       'int 1/(1+x^4)^2 dx',
       'int cos(x)/(1+sin(x)^2)^2 dx',
+      'int cos(x)/(1+sin(x))^2 dx',
       'int x^4/(1-x^2)^(5/2) dx',
       'int x^2/sqrt(1-x^2) dx',
       'int x*ln(x) dx',

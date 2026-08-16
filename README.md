@@ -19,12 +19,13 @@ Solved:
     int csc( x )^2 dx
     int 1 / ( 1 + x^2 ) dx
     int 1 / ( 1 - x^2 ) dx
+    int cos( x ) / ( 1 + sin( x ) )^2 dx
 
 ===
 
 Not solved:
 
-    int cos( x ) / ( 1 + sin( x ) )^2 dx
+    None of the examples listed above.
 
 # Author
 

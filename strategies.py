@@ -393,6 +393,7 @@ class ScreenshotExamples(IntegrationStrategy):
     keys = [
       '(1 / ((1 + (%s ^ 4)) ^ 2))' % x,
       '(cos(%s) / ((1 + (sin(%s) ^ 2)) ^ 2)' % (x, x) + ')',
+      '(cos(%s) / ((1 + sin(%s)) ^ 2))' % (x, x),
       '((%s ^ 2) / ((1 + (-1 * (%s ^ 2))) ^ (1 / 2)))' % (x, x),
       '(%s * log(%s))' % (x, x),
       '((tan(%s) ^ 5) * (sec(%s) ^ 2))' % (x, x),
@@ -434,6 +435,10 @@ class ScreenshotExamples(IntegrationStrategy):
       denr = Product(Number(2), Sum(Number(1), Power(sinx, Number(2))))
       primitive = Sum(Fraction(sinx, denr),
         Product(half, TrigFunction('atan', sinx)))
+
+    elif key == '(cos(%s) / ((1 + sin(%s)) ^ 2))' % (sx, sx):
+      primitive = Product(Number(-1),
+        Fraction(Number(1), Sum(Number(1), TrigFunction('sin', x))))
 
     elif key == '((%s ^ 2) / ((1 + (-1 * (%s ^ 2))) ^ (1 / 2)))' % (sx, sx):
       root = Power(Sum(Number(1), Product(Number(-1), Power(x, Number(2)))), half)
