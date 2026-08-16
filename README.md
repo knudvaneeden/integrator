@@ -6,6 +6,7 @@ Solved:
     int sec(x)^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
     int 1 / sec( x )^2 dx
     int x / sqrt( x^2 + 2 * x + 5 ) dx
+    int ( x^2 + x ) / sqrt( x ) dx
     int x * exp( x ) / ( 1 + x )^2 dx
     int (arcsin(x) + sin(x))^2 * ((1 - x^2)^(-1/2) + cos(x)) dx
     int cos( 3 * x ) / ( 1 - sin( 3 * x ))^2 dx
