@@ -155,6 +155,19 @@ class TestStrategies(unittest.TestCase):
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
 
+  def test_AndOrGraph(self):
+    from parseintg import parse
+    from solver import attempt_integral, AndOrGraph
+    from sublogger import SubLogger
+    intg = parse('int x*exp(x)^2 dx')
+    graph = AndOrGraph(intg.latex())
+    result = attempt_integral(intg, SubLogger('test'), graph)
+    graph_text = repr(graph.as_dict())
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('OR: choose an integration rule' in graph_text, True)
+    self.assertEqual('AND: solve both addends' in graph_text, True)
+    self.assertEqual('chosen' in graph_text, True)
+
 
 if __name__ == "__main__":
   unittest.main()

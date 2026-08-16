@@ -74,6 +74,13 @@ https://www.python.org/downloads/release/python-2718/
 
 It will currently not work out of the box using Python version 3.x.
 
+# AND-OR solution graph
+
+Every integral submitted through the web interface also creates an AND-OR
+solution graph. OR nodes show integration-rule selection, while AND nodes
+show subexpressions that must all be solved. Use the **Print / Save as PDF**
+button above the graph to print it or save it as a PDF from the browser.
+
 # Integrator
 This is a symbolic integrator based on James Slagle's 1961 thesis.
 The goal of this project is to solve integrals symbolically
