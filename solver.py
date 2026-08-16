@@ -17,7 +17,7 @@ def latex_wrap(s):
   """
   Wrap a string in delimeters to mark it for LaTeX rendering.
   """
-  return "\( {} \)".format(s)
+  return r"\( {} \)".format(s)
 
 def newlines_to_breaks(s):
   """
@@ -142,7 +142,7 @@ if __name__ == "__main__":
   if an input is not provided.
   """
   default = "int 3 x / 4 dx"
-  input_str = raw_input(
+  input_str = input(
     "Enter a string to be integrated.\n"
     "Just press enter to integrate '{}'\n"
     "-> ".format(default))
@@ -150,4 +150,4 @@ if __name__ == "__main__":
   log = SubLogger('root')
   attempt_integral(parse(input_str), log)
   for msg in log.entries:
-    print msg
+    print(msg)

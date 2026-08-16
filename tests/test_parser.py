@@ -50,7 +50,9 @@ class TestElements(unittest.TestCase):
     self.assertEqual(parse('arccos(x)').name, 'arccos')
 
   def test_parser(self):
-    self.assertEqual('NO', 'TESTS')
+    parsed = parse('int x^2 dx')
+    self.assertEqual(isinstance(parsed, Integral), True)
+    self.assertEqual(repr(parsed), 'int[(x ^ 2)]dx')
 
 
 if __name__ == '__main__':

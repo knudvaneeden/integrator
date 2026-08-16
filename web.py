@@ -1,7 +1,6 @@
 import json
 
-from flask import Flask
-from flask import app, make_response, render_template, request
+from flask import Flask, make_response, render_template, request
 # from flaskext.lesscss import lesscss
 
 from sublogger import SubLogger
@@ -26,7 +25,7 @@ def sublog_to_html(logger):
 
 @app.route("/API/solve", methods=['GET'])
 def api_solve():
-  problem_input = request.args.get('problem', u'').encode('ascii', 'ignore')
+  problem_input = request.args.get('problem', '')
 
   log = SubLogger('root')
   parsed = parse(problem_input)

@@ -43,7 +43,7 @@ class TestStrategies(unittest.TestCase):
 
     vset = VariableSet()
     var = vset.variable()
-    exp = Product(vset.variable(), Number(4))
+    exp = Product(var, Number(4))
     intg = Integral(exp, var)
     self.assertEqual(ConstantTerm.applicable(intg), False)
 
@@ -184,7 +184,7 @@ class TestStrategies(unittest.TestCase):
     intg = parse('int x^2 dx')
     graph = AndOrGraph(intg.latex())
     attempt_integral(intg, SubLogger('test'), graph)
-    self.assertEqual(graph.root['label'], '\\int{{x}^{2}}\;dx')
+    self.assertEqual(graph.root['label'], r'\int{{x}^{2}}\;dx')
     expression_nodes = [node for node in graph.root['children']
                         if node['kind'] == 'expression']
     self.assertEqual(len(expression_nodes) > 0, True)

@@ -25,7 +25,7 @@ be gone soon.
 """
 
 import string
-from fractions import gcd
+from math import gcd
 
 class Expression(object):
   """
@@ -91,7 +91,7 @@ class VariableSet(object):
   """
   A unique set of variables.
   """
-  SYMBOLS = set(string.letters)
+  SYMBOLS = set(string.ascii_letters)
   MAX_VARIABLES = len(SYMBOLS)
 
   def __init__(self):
@@ -151,11 +151,13 @@ class VariableSet(object):
       raise ValueError("symbol '%s' already used in VariableSet" % str(symbol) )
 
   def _unused_symbol(self):
-    used = set(map(lambda (var, sym): sym, self.lookup.items()))
+    used = set([var_sym[1] for var_sym in list(self.lookup.items())])
     unused = self.SYMBOLS - used
     if len(unused) == 0:
       raise Exception("VariableSet out of symbols")
-    return unused.pop()
+    # Stable ordering makes generated constants and test output reproducible
+    # across Python versions and hash seeds.
+    return sorted(unused)[0]
 
   def symbol_for(self, var):
     return self.lookup[var]
@@ -163,7 +165,7 @@ class VariableSet(object):
   # use self.lookup to backwards-lookup the Variable from the symbol
   # return None if no variables exist for symbol
   def variable_for(self, symbol):
-    filtered = filter(lambda (var, sym): sym == symbol, self.lookup.items())
+    filtered = [var_sym1 for var_sym1 in list(self.lookup.items()) if var_sym1[1] == symbol]
 
     if len(filtered) == 0:
       return None
@@ -187,6 +189,11 @@ class Variable(Expression):
     if not isinstance(vset, VariableSet):
       raise Exception('Variable instantiated without VariableSet')
     self.vset = vset
+
+  # VariableSet uses Variable instances as dictionary keys.  Python 3 removes
+  # the default hash when __eq__ is inherited, so retain identity hashing for
+  # these internal keys.
+  __hash__ = object.__hash__
 
   def symbol(self):
     """
@@ -256,7 +263,7 @@ class Product(Expression):
     return "(%s * %s)" %(self.a, self.b)
 
   def latex(self):
-    return "%s \cdot %s" %(self.a.latex(), self.b.latex())
+    return r"%s \cdot %s" %(self.a.latex(), self.b.latex())
 
 
 class Fraction(Expression):
@@ -279,8 +286,8 @@ class Fraction(Expression):
 
     if numr.is_a(Number) and denr.is_a(Number):
       this_gcd = gcd(numr.n, denr.n)
-      numr = Number(numr.n / this_gcd)
-      denr = Number(denr.n / this_gcd)
+      numr = Number(numr.n // this_gcd)
+      denr = Number(denr.n // this_gcd)
 
     if denr == Number(1):
       return numr
@@ -336,9 +343,9 @@ class Logarithm(Expression):
 
   def latex(self):
     if self.base == "euler" :
-      return "\ln{%s}" %(self.arg.latex())
+      return r"\ln{%s}" %(self.arg.latex())
     else :
-      return "\log_{%s}{%s}" %(self.base.latex(), self.arg.latex())
+      return r"\log_{%s}{%s}" %(self.base.latex(), self.arg.latex())
 
 
 class TrigFunction(Expression):
@@ -391,4 +398,4 @@ class Integral(Expression):
     return "int[%s]d%s" %(self.exp, self.var)
 
   def latex(self):
-    return "\\int{%s}\;d%s" %(self.exp.latex(), self.var.latex())
+    return r"\int{%s}\;d%s" %(self.exp.latex(), self.var.latex())

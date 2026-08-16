@@ -61,10 +61,10 @@ def linear_coefficient(expr, var):
 
 class IntegrationStrategy(object):
   def __init__(self):
-    raise "Strategy is an abstract class"
+    raise NotImplementedError("Strategy is an abstract class")
 
   def apply(exp):
-    raise "apply not implemented"
+    raise NotImplementedError("apply not implemented")
 
 
 class ConstantTerm(IntegrationStrategy):

@@ -68,12 +68,20 @@ https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/le
 
 # Prerequisites
 
-You must currently use Python version 2.7.18 to have it working out of the
-box:
+Use Python 3.8 or newer. Python 3.11 and later are recommended.
 
-https://www.python.org/downloads/release/python-2718/
+https://www.python.org/downloads/
 
-It will currently not work out of the box using Python version 3.x.
+Install the web dependency from the project directory:
+
+    python -m pip install -r requirements.txt
+
+Then start the web interface:
+
+    python web.py
+
+Open http://127.0.0.1:5000/ in a browser. The bundled MathJax files allow
+LaTeX rendering without an Internet connection.
 
 # AND-OR solution graph
 
@@ -136,8 +144,9 @@ somewhere go ahead and open up a terminal and
 
     $ cd /where/did/you/put/the/integrator
 
-Then run :
+Then install the dependency and run:
 
+    $ python -m pip install -r requirements.txt
     $ python web.py
 
 If all goes well, you should now see something like:

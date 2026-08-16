@@ -32,7 +32,7 @@ class ParseError(Exception): pass
 
 
 def _isnum(s):
-  return bool(re.match('\d*\.?\d*$', s))
+  return bool(re.match(r'\d*\.?\d*$', s))
 
 
 def tokenize(s):
@@ -114,13 +114,14 @@ def tokenize(s):
 
 
 def parse_tokens(tokens, vset=None, debug=False):
-  zip3 = lambda l: zip(l, l[1:], l[2:])
+  zip3 = lambda l: list(zip(l, l[1:], l[2:]))
 
   # scan left to right and apply binary expressions
   def scan_binops(tokens, binops):
     # while there are operators in tokens
-    while len(set(binops.keys()).intersection(set(tokens[1:-1]))) > 0:
-      first_index = (i for i,v in enumerate(tokens) if v in binops.keys()).next()
+    while any(isinstance(token, str) and token in binops
+              for token in tokens[1:-1]):
+      first_index = next((i for i,v in enumerate(tokens) if v in list(binops.keys())))
       l,t,r = tokens[first_index - 1], tokens[first_index], tokens[first_index + 1]
 
       if isinstance(l, str) or isinstance(r, str):
@@ -134,7 +135,7 @@ def parse_tokens(tokens, vset=None, debug=False):
   def scan_groups(tokens, vset, split_l, split_r):
     # while there are both left and right splitters in tokens
     while split_l in tokens and split_r in tokens:
-      split_left_index = (i for i,v in enumerate(tokens) if v in [split_l]).next()
+      split_left_index = next((i for i,v in enumerate(tokens) if v in [split_l]))
 
       # find matching splitter
       depth_counter = 1
@@ -156,12 +157,12 @@ def parse_tokens(tokens, vset=None, debug=False):
       left_tokens  = tokens[: split_left_index]
       inner_tokens = tokens[split_left_index + 1 : split_right_index]
       right_tokens = tokens[split_right_index + 1 :]
-      if debug: print "left_tokens : %s" % str(left_tokens)
-      if debug: print "inner_tokens: %s" % str(inner_tokens)
-      if debug: print "right_tokens: %s" % str(right_tokens)
+      if debug: print("left_tokens : %s" % str(left_tokens))
+      if debug: print("inner_tokens: %s" % str(inner_tokens))
+      if debug: print("right_tokens: %s" % str(right_tokens))
 
       new_token = parse_tokens(inner_tokens, vset=vset, debug=debug)
-      if debug: print "new_token: %s" % str(new_token)
+      if debug: print("new_token: %s" % str(new_token))
       tokens = left_tokens + [new_token] + right_tokens
 
     return tokens
@@ -169,11 +170,11 @@ def parse_tokens(tokens, vset=None, debug=False):
   # modified scan_groups for integrals (no nested counting, 'dx' variable capture)
   def scan_integrals(tokens, vset):
     while INTG_START in tokens:
-      split_left_index = (i for i,v in enumerate(tokens) if v == INTG_START).next()
+      split_left_index = next((i for i,v in enumerate(tokens) if v == INTG_START))
 
       # find matching splitter
       is_right_split = lambda t: isinstance(t,str) and t[0] == 'd' and t[1:] in VariableSet.SYMBOLS
-      split_right_index = split_left_index + (i for i,v in enumerate(tokens[split_left_index:]) if is_right_split(v)).next()
+      split_right_index = split_left_index + next((i for i,v in enumerate(tokens[split_left_index:]) if is_right_split(v)))
 
       if split_right_index > len(tokens):
         raise ParseError('unmatched integral start')
@@ -182,23 +183,24 @@ def parse_tokens(tokens, vset=None, debug=False):
       left_tokens  = tokens[: split_left_index]
       inner_tokens = tokens[split_left_index + 1 : split_right_index]
       right_tokens = tokens[split_right_index + 1 :]
-      if debug: print "left_tokens : %s" % str(left_tokens)
-      if debug: print "inner_tokens: %s" % str(inner_tokens)
-      if debug: print "right_tokens: %s" % str(right_tokens)
+      if debug: print("left_tokens : %s" % str(left_tokens))
+      if debug: print("inner_tokens: %s" % str(inner_tokens))
+      if debug: print("right_tokens: %s" % str(right_tokens))
 
       new_inner_token = parse_tokens(inner_tokens, vset=vset, debug=debug)
       intg_var = vset.variable(tokens[split_right_index][1:])
       new_token = Integral(new_inner_token, intg_var)
-      if debug: print "new_token: %s" % str(new_token)
+      if debug: print("new_token: %s" % str(new_token))
       tokens = left_tokens + [new_token] + right_tokens
 
     return tokens
 
   def scan_functions(tokens):
     """Combine a function token and its already-parsed parenthesized argument."""
-    while len(set(FUNCTION_NAMES).intersection(set(tokens))) > 0:
-      function_index = (i for i,v in enumerate(tokens)
-        if v in FUNCTION_NAMES).next()
+    while any(isinstance(token, str) and token in FUNCTION_NAMES
+              for token in tokens):
+      function_index = next((i for i,v in enumerate(tokens)
+        if v in FUNCTION_NAMES))
       if function_index + 1 >= len(tokens) or isinstance(tokens[function_index + 1], str):
         raise ParseError("function '%s' requires a parenthesized argument" %
           tokens[function_index])
@@ -217,7 +219,7 @@ def parse_tokens(tokens, vset=None, debug=False):
 
   # # # #
 
-  if debug: print "parsing tokens: %s" % str(tokens)
+  if debug: print("parsing tokens: %s" % str(tokens))
 
   if vset == None:
     vset = VariableSet()
@@ -225,16 +227,16 @@ def parse_tokens(tokens, vset=None, debug=False):
     raise ValueError('vset is not instance of VariableSet')
 
   # variables
-  if debug: print "    parsing variables"
+  if debug: print("    parsing variables")
   def variables(token):
-    if token in vset.SYMBOLS:
+    if isinstance(token, str) and token in vset.SYMBOLS:
       return vset.variable(token)
     else:
       return token
   tokens = [variables(t) for t in tokens]
 
   # numbers
-  if debug: print "    parsing numbers"
+  if debug: print("    parsing numbers")
   def numbers(token):
     # TODO floats?
     if isinstance(token, str) and _isnum(token):
@@ -244,29 +246,29 @@ def parse_tokens(tokens, vset=None, debug=False):
   tokens = [numbers(t) for t in tokens]
 
   # parens
-  if debug: print "    parsing parens"
+  if debug: print("    parsing parens")
   tokens = scan_groups(tokens, vset, '(', ')')
 
   # named functions (their parenthesized arguments have now been parsed)
-  if debug: print "    parsing functions"
+  if debug: print("    parsing functions")
   tokens = scan_functions(tokens)
 
   # power
-  if debug: print "    parsing powers"
+  if debug: print("    parsing powers")
   binops = {
     '^': lambda l,t,r: Power(l, r) }
   tokens = scan_binops(tokens, binops)
 
   # multiplication
   # TODO division
-  if debug: print "    parsing multiplication"
+  if debug: print("    parsing multiplication")
   binops = {
     '*': lambda l,t,r: Product(l, r) ,
     '/': lambda l,t,r: Fraction(l, r) }
   tokens = scan_binops(tokens, binops)
 
   # addition, subtraction
-  if debug: print "    parsing addition, subtraction"
+  if debug: print("    parsing addition, subtraction")
   binops = {
     '+': lambda l,t,r: Sum(l, r) ,
     '-': lambda l,t,r: Sum(l, Product(Number(-1), r)) }
@@ -291,9 +293,9 @@ def parse(s, vset=None, debug=False):
 
 if __name__ == "__main__":
   s = 'int 2*2x^(3) dx'
-  print "string: \"%s\"" %s
+  print("string: \"%s\"" %s)
   ts = tokenize(s)
-  print "tokens: %s" %ts
+  print("tokens: %s" %ts)
   p = parse_tokens(ts)
-  print "parsed: %s" %p
-  print "simplified: %s" %p.simplified()
+  print("parsed: %s" %p)
+  print("simplified: %s" %p.simplified())
