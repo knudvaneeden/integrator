@@ -10,6 +10,7 @@ Solved:
     int ( x + 1 ) / sqrt( 2 * x - x^2 ) dx
     int x * ( x^(1/2) + x^(-1/2) )^2 dx
     int exp( 6 * x ) / ( exp( 4 * x ) + 1 ) dx
+    int exp( 2 * x ) * ln( 1 + exp( 2 * x ) ) dx
     int x * exp( x ) / ( 1 + x )^2 dx
     int (arcsin(x) + sin(x))^2 * ((1 - x^2)^(-1/2) + cos(x)) dx
     int cos( 3 * x ) / ( 1 - sin( 3 * x ))^2 dx

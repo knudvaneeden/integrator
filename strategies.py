@@ -591,6 +591,29 @@ class ExponentialRationalSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class ExponentialLogSubstitution(IntegrationStrategy):
+  """Solve exp(2x)*ln(1+exp(2x)) with u=1+exp(2x)."""
+  description = "substitution u=1+exp(2x) followed by integration of ln(u)"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    exp2x = TrigFunction('exp', Product(Number(2), x))
+    expected = Product(exp2x, Logarithm(Sum(Number(1), exp2x)))
+    return exp == expected
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    exp2x = TrigFunction('exp', Product(Number(2), x))
+    u = Sum(Number(1), exp2x)
+    u_log_u_minus_u = Sum(Product(u, Logarithm(u)),
+      Product(Number(-1), u))
+    primitive = Product(Fraction(Number(1), Number(2)), u_log_u_minus_u)
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -882,6 +905,6 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   LinearOverQuadraticRoot, ExponentialQuotientDerivative,
   CompositeSquareSubstitution, PolynomialOverSquareRoot,
   ShiftedCircleRoot, SquaredFractionalPowerBinomial,
-  ExponentialRationalSubstitution,
+  ExponentialRationalSubstitution, ExponentialLogSubstitution,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]
