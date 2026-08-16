@@ -10,6 +10,7 @@ and can apply itself to an expression.
 
 from elements import *
 from fractions import Fraction as Rational
+from math import comb
 
 # add on integration uncertainty variable
 def add_integration_constant(expr, original_intg):
@@ -958,6 +959,71 @@ class QuadraticDerivativePowerSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class PolynomialTimesAffinePowerSubstitution(IntegrationStrategy):
+  """Integrate P(x)*(a*x+b)^p by substituting u=a*x+b."""
+  description = "affine substitution for a polynomial times an affine power"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    multiplier = None
+    power = None
+    if exp.is_a(Product):
+      if exp.a.is_a(Power): power, multiplier = exp.a, exp.b
+      elif exp.b.is_a(Power): power, multiplier = exp.b, exp.a
+    elif exp.is_a(Power):
+      power, multiplier = exp, Number(1)
+    elif exp.is_a(Fraction):
+      multiplier = exp.numr
+      if exp.denr.is_a(Power):
+        denominator_exponent = _rational_value(exp.denr.exponent)
+        if denominator_exponent != None:
+          power = Power(exp.denr.base,
+            _rational_expression(-denominator_exponent))
+      else:
+        power = Power(exp.denr, Number(-1))
+    if power == None: return None
+    exponent = _rational_value(power.exponent)
+    if exponent == None: return None
+    base = _laurent_polynomial_coefficients(power.base, intg.var)
+    polynomial = _laurent_polynomial_coefficients(multiplier, intg.var)
+    if base == None or polynomial == None or base.get(1, Rational(0)) == 0:
+      return None
+    if any(degree < 0 or degree > 1 for degree in base.keys()): return None
+    if any(degree < 0 for degree in polynomial.keys()): return None
+    return power.base, exponent, polynomial, base[1], base.get(0, Rational(0))
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    base, exponent, polynomial, a, b = self._parts(intg)
+    transformed = {}
+    for degree, coefficient in polynomial.items():
+      scale = coefficient / (a ** degree)
+      for new_degree in range(degree + 1):
+        term = (scale * Rational(comb(degree, new_degree))
+          * ((-b) ** (degree - new_degree)) / a)
+        transformed[new_degree] = transformed.get(new_degree, Rational(0)) + term
+    terms = []
+    for degree in sorted(transformed.keys(), reverse=True):
+      coefficient = transformed[degree]
+      if coefficient == 0: continue
+      resulting_exponent = exponent + degree + 1
+      if resulting_exponent == 0:
+        term = _scale_by_rational(Logarithm(base), coefficient)
+      else:
+        power = base if resulting_exponent == 1 else Power(base,
+          _rational_expression(resulting_exponent))
+        term = _scale_by_rational(power, coefficient / resulting_exponent)
+      terms.append(term)
+    primitive = terms[0] if terms else Number(0)
+    for term in terms[1:]: primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
+
+
 class AffineSquareRootTrigSubstitution(IntegrationStrategy):
   """Integrate sin(a*sqrt(x)+b) and cos(a*sqrt(x)+b)."""
   description = "substitution u=sqrt(x) for an affine trigonometric phase"
@@ -1016,6 +1082,38 @@ def _rational_trig_term(expr):
       term = _rational_trig_term(expr.numr)
       if term != None: return term[0], term[1], term[2] / denominator
   return None
+
+
+class SineCosineLinearCombination(IntegrationStrategy):
+  """Integrate a*sin(mx+n)+b*cos(mx+n) directly."""
+  description = "linear combination of sine and cosine with a shared affine phase"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Sum): return None
+    first = _rational_trig_term(exp.a)
+    second = _rational_trig_term(exp.b)
+    if first == None or second == None or first[1] != second[1]: return None
+    terms = {first[0]: first[2], second[0]: second[2]}
+    if set(terms.keys()) != set(['sin', 'cos']): return None
+    phase = _laurent_polynomial_coefficients(first[1], intg.var)
+    if phase == None or phase.get(1, Rational(0)) == 0: return None
+    if any(degree < 0 or degree > 1 for degree in phase.keys()): return None
+    return first[1], terms['sin'], terms['cos'], phase[1]
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, sine_coefficient, cosine_coefficient, frequency = self._parts(intg)
+    sine_primitive = _scale_by_rational(TrigFunction('cos', phase),
+      -sine_coefficient / frequency)
+    cosine_primitive = _scale_by_rational(TrigFunction('sin', phase),
+      cosine_coefficient / frequency)
+    return add_integration_constant(Sum(sine_primitive, cosine_primitive), intg)
 
 
 class SquaredSineCosineCombination(IntegrationStrategy):
@@ -1485,7 +1583,8 @@ class VersionFiveExamples(IntegrationStrategy):
 
 
 STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
-  ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
+  ConstantPower, SineCosineLinearCombination, DistributeAddition,
+  OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, ExponentialFunction, ConstantBaseExponential,
   ExpQuadraticSubstitution, CosOverOneMinusSinSquared,
   SecSquaredRationalTangent, ReciprocalSecSquared,
@@ -1498,6 +1597,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   SineFourthCosineFourth, SineFourthOverCosineFourth,
   ReciprocalCotangentFourth, RationalEvenFourthProduct,
   QuadraticDerivativePowerSubstitution,
+  PolynomialTimesAffinePowerSubstitution,
   AffineSquareRootTrigSubstitution,
   SquaredSineCosineCombination,
   TangentPowerSecantSquaredSubstitution,
