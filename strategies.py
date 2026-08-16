@@ -958,6 +958,107 @@ class QuadraticDerivativePowerSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class AffineSquareRootTrigSubstitution(IntegrationStrategy):
+  """Integrate sin(a*sqrt(x)+b) and cos(a*sqrt(x)+b)."""
+  description = "substitution u=sqrt(x) for an affine trigonometric phase"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(TrigFunction) or exp.name not in ['sin', 'cos']:
+      return None
+    root = Power(intg.var, Fraction(Number(1), Number(2)))
+    coefficients = _laurent_polynomial_coefficients(exp.arg, root)
+    if coefficients == None or coefficients.get(1, Rational(0)) == 0:
+      return None
+    if any(degree < 0 or degree > 1 for degree in coefficients.keys()):
+      return None
+    return exp, root, coefficients.get(1, Rational(0))
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    trig, root, coefficient = self._parts(intg)
+    if trig.name == 'cos':
+      first = _scale_by_rational(
+        Product(root, TrigFunction('sin', trig.arg)),
+        Rational(2) / coefficient)
+      second = _scale_by_rational(TrigFunction('cos', trig.arg),
+        Rational(2) / (coefficient * coefficient))
+    else:
+      first = _scale_by_rational(
+        Product(root, TrigFunction('cos', trig.arg)),
+        Rational(-2) / coefficient)
+      second = _scale_by_rational(TrigFunction('sin', trig.arg),
+        Rational(2) / (coefficient * coefficient))
+    return add_integration_constant(Sum(first, second), intg)
+
+
+def _rational_trig_term(expr):
+  """Return (name, argument, rational coefficient) for c*sin(u) or c*cos(u)."""
+  if expr.is_a(TrigFunction) and expr.name in ['sin', 'cos']:
+    return expr.name, expr.arg, Rational(1)
+  if expr.is_a(Product):
+    left = _rational_value(expr.a)
+    if left != None:
+      term = _rational_trig_term(expr.b)
+      if term != None: return term[0], term[1], left * term[2]
+    right = _rational_value(expr.b)
+    if right != None:
+      term = _rational_trig_term(expr.a)
+      if term != None: return term[0], term[1], right * term[2]
+  if expr.is_a(Fraction):
+    denominator = _rational_value(expr.denr)
+    if denominator != None and denominator != 0:
+      term = _rational_trig_term(expr.numr)
+      if term != None: return term[0], term[1], term[2] / denominator
+  return None
+
+
+class SquaredSineCosineCombination(IntegrationStrategy):
+  """Integrate (a*sin(mx+n)+b*cos(mx+n))^2 for rational parameters."""
+  description = "power reduction for a squared sine-cosine combination"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Power) or exp.exponent != Number(2)
+      or not exp.base.is_a(Sum)):
+      return None
+    first = _rational_trig_term(exp.base.a)
+    second = _rational_trig_term(exp.base.b)
+    if first == None or second == None or first[1] != second[1]: return None
+    terms = {first[0]: first[2], second[0]: second[2]}
+    if set(terms.keys()) != set(['sin', 'cos']): return None
+    phase = _laurent_polynomial_coefficients(first[1], intg.var)
+    if phase == None or phase.get(1, Rational(0)) == 0: return None
+    if any(degree < 0 or degree > 1 for degree in phase.keys()): return None
+    return first[1], terms['sin'], terms['cos'], phase[1]
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, sine_coefficient, cosine_coefficient, frequency = self._parts(intg)
+    a, b, m = sine_coefficient, cosine_coefficient, frequency
+    double_phase = Product(Number(2), phase)
+    terms = [_scale_by_rational(intg.var, (a * a + b * b) / Rational(2))]
+    sine_factor = (b * b - a * a) / (Rational(4) * m)
+    cosine_factor = -(a * b) / (Rational(2) * m)
+    if sine_factor != 0:
+      terms.append(_scale_by_rational(TrigFunction('sin', double_phase), sine_factor))
+    if cosine_factor != 0:
+      terms.append(_scale_by_rational(TrigFunction('cos', double_phase), cosine_factor))
+    primitive = terms[0]
+    for term in terms[1:]: primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
+
+
 class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
   """Integrate P(x)/(1+x^2) for a rational-coefficient Laurent polynomial P."""
   description = "Laurent-polynomial reduction over 1+x^2"
@@ -1317,6 +1418,8 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   SineFourthCosineFourth, SineFourthOverCosineFourth,
   ReciprocalCotangentFourth, RationalEvenFourthProduct,
   QuadraticDerivativePowerSubstitution,
+  AffineSquareRootTrigSubstitution,
+  SquaredSineCosineCombination,
   LaurentPolynomialOverOnePlusSquare,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

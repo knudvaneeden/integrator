@@ -13,6 +13,8 @@ Solved:
     int x^4 / ( 1 + x^2 ) dx
     int ( 1 / x^4 / ( 1 + x^2 ) ) dx
     int x * sqrt( x^2 + 16 ) dx
+    int cos( sqrt( x ) ) dx
+    int ( sin( x ) + cos( x ) )^2 dx
     int ( 3 * x^7 - 2 * x^3 + 5 ) / ( 1 + x^2 ) dx
     int sec(x)^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
     int 1 / sec( x )^2 dx

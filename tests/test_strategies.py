@@ -437,6 +437,62 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('int[' in repr(result), False)
     self.assertEqual('ln(' in repr(result), True)
 
+  def test_AffineSquareRootTrigSubstitutionCosine(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int cos( sqrt( x ) ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((2 * ((x ^ (1 / 2)) * sin((x ^ (1 / 2))))) + (2 * cos((x ^ (1 / 2))))) + C)')
+
+  def test_AffineSquareRootTrigSubstitutionShiftedCosine(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int cos( 3 * sqrt( x ) + 2 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('sin(' in repr(result), True)
+
+  def test_AffineSquareRootTrigSubstitutionShiftedSine(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int sin( 2 * sqrt( x ) - 1 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('cos(' in repr(result), True)
+
+  def test_SquaredSineCosineCombination(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int ( sin( x ) + cos( x ) )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '((x + (-1 * (cos((2 * x)) / 2))) + C)')
+
+  def test_SquaredSineCosineCombinationScaledShifted(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int ( 2 * sin( 3 * x + 1 ) - 5 * cos( 3 * x + 1 ) )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('sin(' in repr(result), True)
+    self.assertEqual('cos(' in repr(result), True)
+
+  def test_SquaredSineCosineCombinationReversed(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int ( cos( 2 * x ) + 3 * sin( 2 * x ) )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph
