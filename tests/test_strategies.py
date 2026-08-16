@@ -168,6 +168,18 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('AND: solve both addends' in graph_text, True)
     self.assertEqual('chosen' in graph_text, True)
 
+  def test_AndOrGraphExpressionsAreLatex(self):
+    from parseintg import parse
+    from solver import attempt_integral, AndOrGraph
+    from sublogger import SubLogger
+    intg = parse('int x^2 dx')
+    graph = AndOrGraph(intg.latex())
+    attempt_integral(intg, SubLogger('test'), graph)
+    self.assertEqual(graph.root['label'], '\\int{{x}^{2}}\;dx')
+    expression_nodes = [node for node in graph.root['children']
+                        if node['kind'] == 'expression']
+    self.assertEqual(len(expression_nodes) > 0, True)
+
 
 if __name__ == "__main__":
   unittest.main()

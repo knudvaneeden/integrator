@@ -11,7 +11,14 @@ $(function(){
     var $item = $('<li>')
     var $node = $('<div>').addClass('graph-node').addClass('graph-' + node.kind)
     if (node.status) $node.addClass('graph-' + node.status)
-    $node.text(node.label)
+    if (node.kind == 'problem' || node.kind == 'expression') {
+      // Graph expression labels arrive as TeX without delimiters.  Add
+      // MathJax inline delimiters while still inserting the label as text,
+      // so arbitrary input can never become HTML.
+      $node.text('\\(' + node.label + '\\)')
+    } else {
+      $node.text(node.label)
+    }
     $item.append($node)
     if (node.children && node.children.length) {
       var $children = $('<ul>')
@@ -26,6 +33,12 @@ $(function(){
   function render_graph(graph) {
     $and_or_graph.empty()
     $('<ul>').addClass('graph-tree').append(graph_node(graph)).appendTo($and_or_graph)
+  }
+
+  function typeset_results(done) {
+    var elements = [$problem_response[0], $and_or_graph[0]]
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, elements])
+    if (done) MathJax.Hub.Queue(done)
   }
 
   function show_status(status) {
@@ -55,7 +68,7 @@ $(function(){
         $problem_response.append(data.html)
         render_graph(data.graph)
 
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub, $problem_response[0]]);
+        typeset_results()
       },
       error: function() {
         console.error('error from request!')
@@ -70,8 +83,16 @@ $(function(){
   $problem_solve_btn.click();
 
   $('.graph-print').click(function() {
-    $('body').addClass('printing-graph')
-    window.print()
+    // Wait until MathJax has replaced every TeX label before opening the
+    // browser print dialog.  afterprint keeps print-only styling active for
+    // the complete print/PDF operation.
+    typeset_results(function() {
+      $('body').addClass('printing-graph')
+      window.print()
+    })
+  })
+
+  $(window).on('afterprint', function() {
     $('body').removeClass('printing-graph')
   })
 })
