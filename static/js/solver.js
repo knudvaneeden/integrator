@@ -59,7 +59,7 @@ $(function(){
 
     console.log("sending problem to server ", val)
     $.ajax({
-      url: '/API/solve',
+      url: 'API/solve',
       // data: {problem: encodeURIComponent("intx^2dx")},
       data: {problem: val},
       success: function(data) {
