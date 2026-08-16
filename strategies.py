@@ -893,6 +893,71 @@ def _scale_by_rational(expr, value):
   return Fraction(Product(Number(value.numerator), expr), Number(value.denominator))
 
 
+def _rational_value(expr):
+  if expr.is_a(Number) and isinstance(expr.n, int):
+    return Rational(expr.n)
+  if (expr.is_a(Fraction) and expr.numr.is_a(Number)
+    and expr.denr.is_a(Number) and isinstance(expr.numr.n, int)
+    and isinstance(expr.denr.n, int) and expr.denr.n != 0):
+    return Rational(expr.numr.n, expr.denr.n)
+  return None
+
+
+class QuadraticDerivativePowerSubstitution(IntegrationStrategy):
+  """Integrate k*Q'(x)*Q(x)^p for quadratic Q and rational p."""
+  description = "quadratic substitution u=Q(x)"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    multiplier = None
+    power = None
+    if exp.is_a(Product):
+      if exp.a.is_a(Power): power, multiplier = exp.a, exp.b
+      elif exp.b.is_a(Power): power, multiplier = exp.b, exp.a
+    elif exp.is_a(Power):
+      power, multiplier = exp, Number(1)
+    elif exp.is_a(Fraction):
+      multiplier = exp.numr
+      if exp.denr.is_a(Power):
+        denominator_exponent = _rational_value(exp.denr.exponent)
+        if denominator_exponent != None:
+          power = Power(exp.denr.base,
+            _rational_expression(-denominator_exponent))
+      else:
+        power = Power(exp.denr, Number(-1))
+    if power == None: return None
+    exponent = _rational_value(power.exponent)
+    if exponent == None: return None
+    base = _laurent_polynomial_coefficients(power.base, intg.var)
+    factor = _laurent_polynomial_coefficients(multiplier, intg.var)
+    if base == None or factor == None or base.get(2, Rational(0)) == 0:
+      return None
+    if any(degree < 0 or degree > 2 for degree in base.keys()): return None
+    if any(degree < 0 or degree > 1 for degree in factor.keys()): return None
+    a = base.get(2, Rational(0))
+    b = base.get(1, Rational(0))
+    k = factor.get(1, Rational(0)) / (Rational(2) * a)
+    if factor.get(0, Rational(0)) != k * b: return None
+    return power.base, exponent, k
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    base, exponent, coefficient = self._parts(intg)
+    if exponent == -1:
+      primitive = _scale_by_rational(Logarithm(base), coefficient)
+    else:
+      new_exponent = exponent + 1
+      primitive = _scale_by_rational(
+        Power(base, _rational_expression(new_exponent)),
+        coefficient / new_exponent)
+    return add_integration_constant(primitive, intg)
+
+
 class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
   """Integrate P(x)/(1+x^2) for a rational-coefficient Laurent polynomial P."""
   description = "Laurent-polynomial reduction over 1+x^2"
@@ -1251,6 +1316,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   VariableTimesLinearBinomial, SineSquaredTimesCosine,
   SineFourthCosineFourth, SineFourthOverCosineFourth,
   ReciprocalCotangentFourth, RationalEvenFourthProduct,
+  QuadraticDerivativePowerSubstitution,
   LaurentPolynomialOverOnePlusSquare,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

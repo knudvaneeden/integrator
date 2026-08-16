@@ -409,6 +409,34 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('ln(x)' in rendered, True)
     self.assertEqual('ln((1 + (x ^ 2)))' in rendered, True)
 
+  def test_QuadraticDerivativePowerSubstitutionSquareRoot(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int x * sqrt( x^2 + 16 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((((x ^ 2) + 16) ^ (3 / 2)) / 3) + C)')
+
+  def test_QuadraticDerivativePowerSubstitutionGeneralPower(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int ( 6 * x + 2 ) * ( 3 * x^2 + 2 * x + 5 )^4 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('^ 5' in repr(result), True)
+
+  def test_QuadraticDerivativePowerSubstitutionLogarithm(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int ( 6 * x + 2 ) / ( 3 * x^2 + 2 * x + 5 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('ln(' in repr(result), True)
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph
