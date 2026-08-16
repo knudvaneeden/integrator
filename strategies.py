@@ -1214,6 +1214,95 @@ class TangentPowerSecantSquaredSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+def _rational_exponential_term(expr):
+  """Return (rational coefficient, phase) for c*exp(phase)."""
+  if expr.is_a(TrigFunction) and expr.name == 'exp':
+    return Rational(1), expr.arg
+  if expr.is_a(Product):
+    left = _rational_value(expr.a)
+    if left != None:
+      term = _rational_exponential_term(expr.b)
+      if term != None: return left * term[0], term[1]
+    right = _rational_value(expr.b)
+    if right != None:
+      term = _rational_exponential_term(expr.a)
+      if term != None: return right * term[0], term[1]
+  if expr.is_a(Fraction):
+    denominator = _rational_value(expr.denr)
+    if denominator != None and denominator != 0:
+      term = _rational_exponential_term(expr.numr)
+      if term != None: return term[0] / denominator, term[1]
+  return None
+
+
+def _constant_plus_exponential(expr):
+  """Return (constant, exponential coefficient, phase) for d+e*exp(phase)."""
+  if not expr.is_a(Sum): return None
+  constant = _rational_value(expr.a)
+  exponential = _rational_exponential_term(expr.b)
+  if constant == None or exponential == None:
+    constant = _rational_value(expr.b)
+    exponential = _rational_exponential_term(expr.a)
+  if constant == None or exponential == None or exponential[0] == 0: return None
+  return constant, exponential[0], exponential[1]
+
+
+class ExponentialBinomialPowerSubstitution(IntegrationStrategy):
+  """Integrate c*exp(ax+b)*(d+e*exp(ax+b))^p."""
+  description = "substitution u=d+e*exp(ax+b)"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    numerator = None
+    binomial_power = None
+    if exp.is_a(Fraction):
+      numerator = _rational_exponential_term(exp.numr)
+      if exp.denr.is_a(Power):
+        denominator_exponent = _rational_value(exp.denr.exponent)
+        if denominator_exponent != None:
+          binomial_power = (exp.denr.base, -denominator_exponent)
+      else:
+        binomial_power = (exp.denr, Rational(-1))
+    elif exp.is_a(Product):
+      numerator = _rational_exponential_term(exp.a)
+      other = exp.b
+      if numerator == None:
+        numerator = _rational_exponential_term(exp.b)
+        other = exp.a
+      if other.is_a(Power):
+        power = _rational_value(other.exponent)
+        if power != None: binomial_power = (other.base, power)
+      else:
+        binomial_power = (other, Rational(1))
+    if numerator == None or binomial_power == None: return None
+    coefficient, numerator_phase = numerator
+    base, exponent = binomial_power
+    binomial = _constant_plus_exponential(base)
+    if binomial == None or binomial[2] != numerator_phase: return None
+    phase = _laurent_polynomial_coefficients(numerator_phase, intg.var)
+    if phase == None or phase.get(1, Rational(0)) == 0: return None
+    if any(degree < 0 or degree > 1 for degree in phase.keys()): return None
+    return coefficient, base, exponent, binomial[1], phase[1]
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, base, exponent, exponential_coefficient, frequency = self._parts(intg)
+    substitution_factor = coefficient / (frequency * exponential_coefficient)
+    if exponent == -1:
+      primitive = _scale_by_rational(Logarithm(base), substitution_factor)
+    else:
+      new_exponent = exponent + 1
+      power = base if new_exponent == 1 else Power(base,
+        _rational_expression(new_exponent))
+      primitive = _scale_by_rational(power, substitution_factor / new_exponent)
+    return add_integration_constant(primitive, intg)
+
+
 class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
   """Integrate P(x)/(1+x^2) for a rational-coefficient Laurent polynomial P."""
   description = "Laurent-polynomial reduction over 1+x^2"
@@ -1578,6 +1667,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   AffineSquareRootTrigSubstitution,
   SquaredSineCosineCombination,
   TangentPowerSecantSquaredSubstitution,
+  ExponentialBinomialPowerSubstitution,
   LaurentPolynomialOverOnePlusSquare,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

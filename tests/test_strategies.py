@@ -584,6 +584,33 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('int[' in repr(result), False)
     self.assertEqual('ln(tan((5 * x)))' in repr(result), True)
 
+  def test_ExponentialBinomialPowerSubstitutionLogarithm(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int exp( x) / ( 1 + exp( x ) ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '(ln((1 + exp(x))) + C)')
+
+  def test_ExponentialBinomialPowerSubstitutionScaledShifted(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 3 * exp( 2 * x + 1 ) / ( 5 + 7 * exp( 2 * x + 1 ) ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('ln(' in repr(result), True)
+
+  def test_ExponentialBinomialPowerSubstitutionGeneralPower(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 4 * exp( 3 * x ) * ( 2 + 5 * exp( 3 * x ) )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('^ 3' in repr(result), True)
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph
