@@ -36,8 +36,11 @@ $(function(){
   }
 
   function typeset_results(done) {
-    var elements = [$problem_response[0], $and_or_graph[0]]
-    MathJax.Hub.Queue(["Typeset", MathJax.Hub, elements])
+    // MathJax 2 Typeset accepts one DOM element per command.  Passing an
+    // array makes it process only the first element, which left every graph
+    // label as raw TeX even though the explanation rendered correctly.
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, $problem_response[0]])
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, $and_or_graph[0]])
     if (done) MathJax.Hub.Queue(done)
   }
 
