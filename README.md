@@ -1,8 +1,12 @@
 Solved:
 
     int x dx
+    int x^2 dx
+    int x * ( x + 1 ) dx
     int x + x^2 dx
     int 2 + cos( x ) dx
+    int sin( x )^2 * cos( x ) dx
+    int sin( x )^4 * cos( x )^4 dx
     int sec(x)^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
     int 1 / sec( x )^2 dx
     int x / sqrt( x^2 + 2 * x + 5 ) dx
@@ -11,6 +15,8 @@ Solved:
     int x * ( x^(1/2) + x^(-1/2) )^2 dx
     int exp( 6 * x ) / ( exp( 4 * x ) + 1 ) dx
     int exp( 2 * x ) * ln( 1 + exp( 2 * x ) ) dx
+    int 1 / ( 1 + cos( x ) ) dx
+    int 1 / cos( x )^2 dx
     int x * exp( x ) / ( 1 + x )^2 dx
     int (arcsin(x) + sin(x))^2 * ((1 - x^2)^(-1/2) + cos(x)) dx
     int cos( 3 * x ) / ( 1 - sin( 3 * x ))^2 dx

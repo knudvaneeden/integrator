@@ -282,6 +282,61 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(repr(result),
       '(((1 / 2) * (((1 + exp((2 * x))) * ln((1 + exp((2 * x))))) + (-1 * (1 + exp((2 * x)))))) + C)')
 
+  def test_OneOverOnePlusCosine(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 1 / ( 1 + cos( x ) ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '(tan((x / 2)) + C)')
+
+  def test_ReciprocalCosSquared(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 1 / cos( x )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '(tan(x) + C)')
+
+  def test_VariableTimesLinearBinomial(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int x * ( x + 1 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '((((1 / 3) * (x ^ 3)) + ((1 / 2) * (x ^ 2))) + C)')
+
+  def test_XSquared(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    result = attempt_integral(parse('int x^2 dx'), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '(((1 / 3) * (x ^ 3)) + C)')
+
+  def test_SineSquaredTimesCosine(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int sin( x )^2 * cos( x ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '(((sin(x) ^ 3) / 3) + C)')
+
+  def test_SineFourthCosineFourth(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int sin( x )^4 * cos( x )^4 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((((3 / 128) * x) + ((-1 / 128) * sin((4 * x)))) + (sin((8 * x)) / 1024)) + C)')
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph

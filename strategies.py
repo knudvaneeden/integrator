@@ -614,6 +614,124 @@ class ExponentialLogSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class OneOverOnePlusCosine(IntegrationStrategy):
+  """Use 1+cos(x)=2*cos(x/2)^2."""
+  description = "half-angle identity for 1/(1+cos(x))"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    return (exp.is_a(Fraction) and exp.numr == Number(1)
+      and exp.denr == Sum(Number(1), TrigFunction('cos', x)))
+
+  @classmethod
+  def apply(self, intg):
+    half_x = Fraction(intg.var, Number(2))
+    primitive = TrigFunction('tan', half_x)
+    return add_integration_constant(primitive, intg)
+
+
+class ReciprocalCosSquared(IntegrationStrategy):
+  """Rewrite 1/cos(u)^2 as sec(u)^2."""
+  description = "reciprocal identity 1/cos(u)^2=sec(u)^2"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or exp.numr != Number(1)
+        or not exp.denr.is_a(Power)
+        or exp.denr.exponent != Number(2)
+        or not exp.denr.base.is_a(TrigFunction)
+        or exp.denr.base.name != 'cos'):
+      return None
+    arg = exp.denr.base.arg
+    coefficient = linear_coefficient(arg, intg.var)
+    if coefficient in [None, Number(0)]: return None
+    return arg, coefficient
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    arg, coefficient = self._parts(intg)
+    primitive = Fraction(TrigFunction('tan', arg), coefficient).simplified()
+    return add_integration_constant(primitive, intg)
+
+
+class VariableTimesLinearBinomial(IntegrationStrategy):
+  """Expand x*(x+1) and integrate its two powers."""
+  description = "distribute x over x+1 and use the power rule"
+
+  @classmethod
+  def applicable(self, intg):
+    x = intg.var
+    return intg.simplified().exp == Product(x, Sum(x, Number(1)))
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    cubic = Product(Fraction(Number(1), Number(3)), Power(x, Number(3)))
+    quadratic = Product(Fraction(Number(1), Number(2)), Power(x, Number(2)))
+    return add_integration_constant(Sum(cubic, quadratic), intg)
+
+
+class SineSquaredTimesCosine(IntegrationStrategy):
+  """Solve sin(u)^2*cos(u) by substituting v=sin(u)."""
+  description = "substitution u=sin(x)"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return None
+    for sine_power, cosine in [(exp.a, exp.b), (exp.b, exp.a)]:
+      if (sine_power.is_a(Power) and sine_power.exponent == Number(2)
+          and sine_power.base.is_a(TrigFunction)
+          and sine_power.base.name == 'sin'
+          and cosine.is_a(TrigFunction) and cosine.name == 'cos'
+          and cosine.arg == sine_power.base.arg):
+        coefficient = linear_coefficient(cosine.arg, intg.var)
+        if coefficient not in [None, Number(0)]:
+          return sine_power.base, coefficient
+    return None
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    sine, coefficient = self._parts(intg)
+    denominator = Product(Number(3), coefficient).simplified()
+    primitive = Fraction(Power(sine, Number(3)), denominator).simplified()
+    return add_integration_constant(primitive, intg)
+
+
+class SineFourthCosineFourth(IntegrationStrategy):
+  """Use power reduction for sin(x)^4*cos(x)^4."""
+  description = "trigonometric power reduction for sin(x)^4 cos(x)^4"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    sine4 = Power(TrigFunction('sin', x), Number(4))
+    cosine4 = Power(TrigFunction('cos', x), Number(4))
+    return exp in [Product(sine4, cosine4), Product(cosine4, sine4)]
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    linear = Product(Fraction(Number(3), Number(128)), x)
+    sine4 = Product(Fraction(Number(-1), Number(128)),
+      TrigFunction('sin', Product(Number(4), x)))
+    sine8 = Fraction(TrigFunction('sin', Product(Number(8), x)), Number(1024))
+    primitive = Sum(Sum(linear, sine4), sine8)
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -906,5 +1024,8 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   CompositeSquareSubstitution, PolynomialOverSquareRoot,
   ShiftedCircleRoot, SquaredFractionalPowerBinomial,
   ExponentialRationalSubstitution, ExponentialLogSubstitution,
+  OneOverOnePlusCosine, ReciprocalCosSquared,
+  VariableTimesLinearBinomial, SineSquaredTimesCosine,
+  SineFourthCosineFourth,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]
