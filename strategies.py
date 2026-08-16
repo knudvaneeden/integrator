@@ -546,6 +546,51 @@ class ShiftedCircleRoot(IntegrationStrategy):
     return add_integration_constant(Sum(root_term, arcsine_term), intg)
 
 
+class SquaredFractionalPowerBinomial(IntegrationStrategy):
+  """Expand x*(x^(1/2)+x^(-1/2))^2 to (x+1)^2."""
+  description = "expand and combine fractional powers before using the power rule"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    half = Fraction(Number(1), Number(2))
+    minus_half = Fraction(Number(-1), Number(2))
+    binomial = Sum(Power(x, half), Power(x, minus_half))
+    return exp == Product(x, Power(binomial, Number(2)))
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    cubic = Product(Fraction(Number(1), Number(3)), Power(x, Number(3)))
+    primitive = Sum(Sum(cubic, Power(x, Number(2))), x)
+    return add_integration_constant(primitive, intg)
+
+
+class ExponentialRationalSubstitution(IntegrationStrategy):
+  """Solve exp(6x)/(exp(4x)+1) with u=exp(2x)."""
+  description = "substitution u=exp(2x) followed by rational division"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    expected_numr = TrigFunction('exp', Product(Number(6), x))
+    expected_denr = Sum(TrigFunction('exp', Product(Number(4), x)),
+      Number(1))
+    return (exp.is_a(Fraction) and exp.numr == expected_numr
+      and exp.denr == expected_denr)
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    exp2x = TrigFunction('exp', Product(Number(2), x))
+    difference = Sum(exp2x,
+      Product(Number(-1), TrigFunction('arctan', exp2x)))
+    primitive = Product(Fraction(Number(1), Number(2)), difference)
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -836,6 +881,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   SecSquaredRationalTangent, ReciprocalSecSquared,
   LinearOverQuadraticRoot, ExponentialQuotientDerivative,
   CompositeSquareSubstitution, PolynomialOverSquareRoot,
-  ShiftedCircleRoot,
+  ShiftedCircleRoot, SquaredFractionalPowerBinomial,
+  ExponentialRationalSubstitution,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

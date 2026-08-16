@@ -252,6 +252,26 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(repr(result),
       '(((-1 * (((2 * x) + (-1 * (x ^ 2))) ^ (1 / 2))) + (2 * arcsin((x + -1)))) + C)')
 
+  def test_SquaredFractionalPowerBinomial(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int x * ( x^(1/2) + x^(-1/2) )^2 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((((1 / 3) * (x ^ 3)) + (x ^ 2)) + x) + C)')
+
+  def test_ExponentialRationalSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int exp( 6 * x ) / ( exp( 4 * x ) + 1 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((1 / 2) * (exp((2 * x)) + (-1 * arctan(exp((2 * x)))))) + C)')
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph
