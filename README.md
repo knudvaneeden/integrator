@@ -21,6 +21,7 @@ Solved:
     int 1 / ( 1 - x^2 ) dx
     int cos( x ) / ( 1 + sin( x ) )^2 dx
     int x exp(x)^2 dx
+    int x exp(x^2) dx
     int ln( x ) dx
     int log( x ) dx
     int arcsin( x ) dx

@@ -155,6 +155,15 @@ class TestStrategies(unittest.TestCase):
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
 
+  def test_ExpQuadraticSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int x exp(x^2) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result), '(((1 / 2) * exp((x ^ 2))) + C)')
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph

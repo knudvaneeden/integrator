@@ -299,6 +299,31 @@ class ConstantBaseExponential(IntegrationStrategy):
     return add_integration_constant(Fraction(exp, denr), intg)
 
 
+class ExpQuadraticSubstitution(IntegrationStrategy):
+  """Solve x*exp(x^2) by the substitution u=x^2."""
+  description = "substitution u=x^2 in x exp(x^2)"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return False
+    for factor, exponential in [(exp.a, exp.b), (exp.b, exp.a)]:
+      if (factor == intg.var and exponential.is_a(TrigFunction)
+          and exponential.name == 'exp'
+          and exponential.arg.is_a(Power)
+          and exponential.arg.base == intg.var
+          and exponential.arg.exponent == Number(2)):
+        return True
+    return False
+
+  @classmethod
+  def apply(self, intg):
+    exp = intg.simplified().exp
+    exponential = exp.b if exp.a == intg.var else exp.a
+    primitive = Product(Fraction(Number(1), Number(2)), exponential)
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -585,5 +610,6 @@ class VersionFiveExamples(IntegrationStrategy):
 STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, DistributeAddition, OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, ExponentialFunction, ConstantBaseExponential,
+  ExpQuadraticSubstitution,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]
