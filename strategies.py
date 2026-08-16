@@ -815,8 +815,8 @@ class RationalEvenFourthProduct(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
-def _polynomial_coefficients(expr, var):
-  """Return {degree: rational coefficient}, or None for a non-polynomial."""
+def _laurent_polynomial_coefficients(expr, var):
+  """Return {integer degree: rational coefficient}, or None."""
   if expr.is_a(Number):
     return {0: Rational(expr.n)}
   if expr == var:
@@ -824,8 +824,8 @@ def _polynomial_coefficients(expr, var):
   if expr.is_a(Variable):
     return None
   if expr.is_a(Sum):
-    a = _polynomial_coefficients(expr.a, var)
-    b = _polynomial_coefficients(expr.b, var)
+    a = _laurent_polynomial_coefficients(expr.a, var)
+    b = _laurent_polynomial_coefficients(expr.b, var)
     if a == None or b == None: return None
     result = dict(a)
     for degree, coefficient in b.items():
@@ -833,8 +833,8 @@ def _polynomial_coefficients(expr, var):
     return dict((degree, coefficient) for degree, coefficient in result.items()
       if coefficient != 0)
   if expr.is_a(Product):
-    a = _polynomial_coefficients(expr.a, var)
-    b = _polynomial_coefficients(expr.b, var)
+    a = _laurent_polynomial_coefficients(expr.a, var)
+    b = _laurent_polynomial_coefficients(expr.b, var)
     if a == None or b == None: return None
     result = {}
     for degree_a, coefficient_a in a.items():
@@ -845,9 +845,14 @@ def _polynomial_coefficients(expr, var):
       if coefficient != 0)
   if expr.is_a(Power) and expr.exponent.is_a(Number):
     exponent = expr.exponent.n
-    if not isinstance(exponent, int) or exponent < 0: return None
-    base = _polynomial_coefficients(expr.base, var)
+    if not isinstance(exponent, int): return None
+    base = _laurent_polynomial_coefficients(expr.base, var)
     if base == None: return None
+    if exponent < 0:
+      if len(base) != 1: return None
+      degree, coefficient = list(base.items())[0]
+      if coefficient == 0: return None
+      return {degree * exponent: coefficient ** exponent}
     result = {0: Rational(1)}
     for unused in range(exponent):
       product = {}
@@ -858,11 +863,13 @@ def _polynomial_coefficients(expr, var):
       result = product
     return result
   if expr.is_a(Fraction):
-    numr = _polynomial_coefficients(expr.numr, var)
-    denr = _polynomial_coefficients(expr.denr, var)
-    if numr == None or denr == None or set(denr.keys()) != set([0]) or denr[0] == 0:
+    numr = _laurent_polynomial_coefficients(expr.numr, var)
+    denr = _laurent_polynomial_coefficients(expr.denr, var)
+    if numr == None or denr == None or len(denr) != 1:
       return None
-    return dict((degree, coefficient / denr[0])
+    denr_degree, denr_coefficient = list(denr.items())[0]
+    if denr_coefficient == 0: return None
+    return dict((degree - denr_degree, coefficient / denr_coefficient)
       for degree, coefficient in numr.items())
   return None
 
@@ -886,9 +893,9 @@ def _scale_by_rational(expr, value):
   return Fraction(Product(Number(value.numerator), expr), Number(value.denominator))
 
 
-class PolynomialOverOnePlusSquare(IntegrationStrategy):
-  """Integrate P(x)/(1+x^2) for any rational-coefficient polynomial P."""
-  description = "polynomial division of P(x) by 1+x^2"
+class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
+  """Integrate P(x)/(1+x^2) for a rational-coefficient Laurent polynomial P."""
+  description = "Laurent-polynomial reduction over 1+x^2"
 
   @classmethod
   def _coefficients(self, intg):
@@ -896,7 +903,7 @@ class PolynomialOverOnePlusSquare(IntegrationStrategy):
     if (not exp.is_a(Fraction)
       or exp.denr != Sum(Number(1), Power(intg.var, Number(2)))):
       return None
-    return _polynomial_coefficients(exp.numr, intg.var)
+    return _laurent_polynomial_coefficients(exp.numr, intg.var)
 
   @classmethod
   def applicable(self, intg):
@@ -928,6 +935,21 @@ class PolynomialOverOnePlusSquare(IntegrationStrategy):
         linear / Rational(2)))
     if constant != 0:
       terms.append(_scale_by_rational(TrigFunction('atan', x), constant))
+    for degree in sorted((d for d in remainder.keys() if d < 0), reverse=True):
+      coefficient = remainder[degree]
+      n = -degree
+      while n >= 2:
+        power = Power(x, Number(1 - n))
+        terms.append(_scale_by_rational(power,
+          coefficient / Rational(1 - n)))
+        coefficient = -coefficient
+        n -= 2
+      if n == 0:
+        terms.append(_scale_by_rational(TrigFunction('atan', x), coefficient))
+      else:
+        terms.append(_scale_by_rational(Logarithm(x), coefficient))
+        terms.append(_scale_by_rational(Logarithm(one_plus_x2),
+          -coefficient / Rational(2)))
     primitive = terms[0] if terms else Number(0)
     for term in terms[1:]: primitive = Sum(primitive, term)
     return add_integration_constant(primitive, intg)
@@ -1229,6 +1251,6 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   VariableTimesLinearBinomial, SineSquaredTimesCosine,
   SineFourthCosineFourth, SineFourthOverCosineFourth,
   ReciprocalCotangentFourth, RationalEvenFourthProduct,
-  PolynomialOverOnePlusSquare,
+  LaurentPolynomialOverOnePlusSquare,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

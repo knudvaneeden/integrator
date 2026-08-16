@@ -367,7 +367,7 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('ln((x + -1))' in repr(result), True)
     self.assertEqual('atan(x)' in repr(result), True)
 
-  def test_PolynomialOverOnePlusSquareQuartic(self):
+  def test_LaurentPolynomialOverOnePlusSquareQuartic(self):
     from parseintg import parse
     from solver import attempt_integral
     from sublogger import SubLogger
@@ -377,7 +377,7 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(repr(result),
       '(((((x ^ 3) / 3) + (-1 * x)) + atan(x)) + C)')
 
-  def test_PolynomialOverOnePlusSquareGeneral(self):
+  def test_LaurentPolynomialOverOnePlusSquareGeneral(self):
     from parseintg import parse
     from solver import attempt_integral
     from sublogger import SubLogger
@@ -387,6 +387,27 @@ class TestStrategies(unittest.TestCase):
     rendered = repr(result)
     self.assertEqual('ln((1 + (x ^ 2)))' in rendered, True)
     self.assertEqual('(5 * atan(x))' in rendered, True)
+
+  def test_LaurentPolynomialOverOnePlusSquareNegativeEven(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int ( 1 / x^4 / ( 1 + x^2 ) ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '((((-1 * ((x ^ -3) / 3)) + (x ^ -1)) + atan(x)) + C)')
+
+  def test_LaurentPolynomialOverOnePlusSquareNegativeOdd(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int x^(-3) / ( 1 + x^2 ) dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    rendered = repr(result)
+    self.assertEqual('ln(x)' in rendered, True)
+    self.assertEqual('ln((1 + (x ^ 2)))' in rendered, True)
 
   def test_AndOrGraph(self):
     from parseintg import parse
