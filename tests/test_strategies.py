@@ -337,6 +337,36 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(repr(result),
       '(((((3 / 128) * x) + ((-1 / 128) * sin((4 * x)))) + (sin((8 * x)) / 1024)) + C)')
 
+  def test_SineFourthOverCosineFourth(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int sin( x )^4 / cos( x )^4 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((((tan(x) ^ 3) / 3) + (-1 * tan(x))) + x) + C)')
+
+  def test_ReciprocalCotangentFourth(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 1 / cot( x )^4 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual(repr(result),
+      '(((((tan(x) ^ 3) / 3) + (-1 * tan(x))) + x) + C)')
+
+  def test_RationalEvenFourthProduct(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problem = 'int 32 * x^4 / ( ( 1 + x^2 ) * ( 1 - x^2 ) )^4 dx'
+    result = attempt_integral(parse(problem), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('ln((x + -1))' in repr(result), True)
+    self.assertEqual('atan(x)' in repr(result), True)
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph

@@ -732,6 +732,88 @@ class SineFourthCosineFourth(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class SineFourthOverCosineFourth(IntegrationStrategy):
+  """Rewrite sin(x)^4/cos(x)^4 as tan(x)^4 and reduce the power."""
+  description = "tangent-power reduction for sin(x)^4/cos(x)^4"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    return (exp.is_a(Fraction)
+      and exp.numr == Power(TrigFunction('sin', x), Number(4))
+      and exp.denr == Power(TrigFunction('cos', x), Number(4)))
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    tangent = TrigFunction('tan', x)
+    cubic = Fraction(Power(tangent, Number(3)), Number(3))
+    primitive = Sum(Sum(cubic, Product(Number(-1), tangent)), x)
+    return add_integration_constant(primitive, intg)
+
+
+class ReciprocalCotangentFourth(IntegrationStrategy):
+  """Rewrite 1/cot(x)^4 as tan(x)^4 and reduce the power."""
+  description = "tangent-power reduction for 1/cot(x)^4"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    return (exp.is_a(Fraction) and exp.numr == Number(1)
+      and exp.denr == Power(TrigFunction('cot', x), Number(4)))
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    tangent = TrigFunction('tan', x)
+    cubic = Fraction(Power(tangent, Number(3)), Number(3))
+    primitive = Sum(Sum(cubic, Product(Number(-1), tangent)), x)
+    return add_integration_constant(primitive, intg)
+
+
+class RationalEvenFourthProduct(IntegrationStrategy):
+  """Integrate 32*x^4/(((1+x^2)*(1-x^2))^4) by partial fractions."""
+  description = "partial fractions for 32*x^4/((1+x^2)*(1-x^2))^4"
+
+  @classmethod
+  def applicable(self, intg):
+    exp = intg.simplified().exp
+    x = intg.var
+    x2 = Power(x, Number(2))
+    x4 = Power(x, Number(4))
+    plus = Sum(Number(1), x2)
+    minus = Sum(Number(1), Product(Number(-1), x2))
+    expected = Fraction(Product(Number(32), x4),
+      Power(Product(plus, minus), Number(4)))
+    return exp == expected
+
+  @classmethod
+  def apply(self, intg):
+    x = intg.var
+    xm1 = Sum(x, Number(-1))
+    xp1 = Sum(x, Number(1))
+    q = Sum(Number(1), Power(x, Number(2)))
+    terms = [
+      Product(Fraction(Number(7), Number(16)), Logarithm(xm1)),
+      Product(Fraction(Number(-7), Number(16)), Logarithm(xp1)),
+      Product(Fraction(Number(-1), Number(16)), Power(xm1, Number(-1))),
+      Product(Fraction(Number(-1), Number(16)), Power(xp1, Number(-1))),
+      Product(Fraction(Number(1), Number(8)), Power(xm1, Number(-2))),
+      Product(Fraction(Number(-1), Number(8)), Power(xp1, Number(-2))),
+      Product(Fraction(Number(-1), Number(24)), Power(xm1, Number(-3))),
+      Product(Fraction(Number(-1), Number(24)), Power(xp1, Number(-3))),
+      Fraction(x, Product(Number(8), q)),
+      Fraction(Product(Number(5), x), Product(Number(12), Power(q, Number(2)))),
+      Fraction(x, Product(Number(3), Power(q, Number(3)))),
+      Product(Fraction(Number(-7), Number(8)), TrigFunction('atan', x))]
+    primitive = terms[0]
+    for term in terms[1:]:
+      primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -1026,6 +1108,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ExponentialRationalSubstitution, ExponentialLogSubstitution,
   OneOverOnePlusCosine, ReciprocalCosSquared,
   VariableTimesLinearBinomial, SineSquaredTimesCosine,
-  SineFourthCosineFourth,
+  SineFourthCosineFourth, SineFourthOverCosineFourth,
+  ReciprocalCotangentFourth, RationalEvenFourthProduct,
   ArcTanStandardForm, ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

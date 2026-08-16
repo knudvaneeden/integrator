@@ -7,6 +7,9 @@ Solved:
     int 2 + cos( x ) dx
     int sin( x )^2 * cos( x ) dx
     int sin( x )^4 * cos( x )^4 dx
+    int sin( x )^4 / cos( x )^4 dx
+    int 1 / cot( x )^4 dx
+    int 32 * x^4 / ( ( 1 + x^2 ) * ( 1 - x^2 ) )^4 dx
     int sec(x)^2 / ( 1 + sec( x )^2 - 3 * tan( x ) ) dx
     int 1 / sec( x )^2 dx
     int x / sqrt( x^2 + 2 * x + 5 ) dx
