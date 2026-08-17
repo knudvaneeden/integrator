@@ -117,6 +117,18 @@ class TestStrategies(unittest.TestCase):
       result = attempt_integral(integral, SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
 
+  def test_ReciprocalXDifferenceSquareRoot(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = attempt_integral(
+      parse('int 1 / ( x * sqrt( x^2 - 1 ) ) dx'), SubLogger('test'))
+    self.assertEqual(repr(requested), '(arcsec(x) + C)')
+    general = attempt_integral(
+      parse('int 3 / ( x * sqrt( 2 * x^2 - 5 ) ) dx'), SubLogger('test'))
+    self.assertEqual('int[' in repr(general), False)
+    self.assertEqual('arcsec(' in repr(general), True)
+
   def test_ArcTangentAffineSquareRoot(self):
     from parseintg import parse
     from solver import attempt_integral

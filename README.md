@@ -104,6 +104,7 @@ Solved:
     int 1 / ( x^2 * sqrt( x^2 + 4 ) ) dx
     int arctan( sqrt( x ) ) dx
     int cos( x )^4 dx
+    int 1 / ( x * sqrt( x^2 - 1 ) ) dx
 
 ===
 

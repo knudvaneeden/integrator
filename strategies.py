@@ -1083,6 +1083,44 @@ class ReciprocalXSquaredQuadraticSquareRoot(IntegrationStrategy):
     return add_integration_constant(primitive.simplified(), intg)
 
 
+class ReciprocalXDifferenceSquareRoot(IntegrationStrategy):
+  """Integrate k/(x*sqrt(a*x^2-b)) for positive rational a and b."""
+  description = "reciprocal x times a quadratic-difference square root"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    numerator = _rational_value(exp.numr) if exp.is_a(Fraction) else None
+    if numerator == None or not exp.denr.is_a(Product): return None
+    factors = [exp.denr.a, exp.denr.b]
+    if intg.var not in factors: return None
+    root = factors[0] if factors[1] == intg.var else factors[1]
+    if (not root.is_a(Power)
+      or root.exponent != Fraction(Number(1), Number(2))): return None
+    coefficients = _laurent_polynomial_coefficients(root.base, intg.var)
+    if coefficients == None or coefficients.get(1, Rational(0)) != 0:
+      return None
+    if any(degree not in (0, 2) for degree in coefficients): return None
+    a = coefficients.get(2, Rational(0))
+    constant = coefficients.get(0, Rational(0))
+    if a <= 0 or constant >= 0: return None
+    return numerator, a, -constant
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    numerator, a, b = self._parts(intg)
+    argument_scale = _rational_square_root_expression(a / b)
+    argument = (intg.var if argument_scale == Number(1)
+      else Product(argument_scale, intg.var).simplified())
+    primitive = Fraction(TrigFunction('arcsec', argument),
+      _rational_square_root_expression(b)).simplified()
+    primitive = _scale_by_rational(primitive, numerator)
+    return add_integration_constant(primitive, intg)
+
+
 def _symbolic_polynomial_coefficients(expr, var):
   """Small symbolic-coefficient polynomial extractor used for quadratic roots."""
   if expr == var: return {1: Number(1)}
@@ -2540,6 +2578,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ReciprocalOnePlusOrMinusCosine, ReciprocalCosSquared,
   SineFourthCosineFourth, RationalEvenFourthProduct,
   ReciprocalXSquaredQuadraticSquareRoot,
+  ReciprocalXDifferenceSquareRoot,
   LinearOverQuadraticSquareRoot, MonicQuadraticParameterSquareRoot,
   QuadraticDerivativePowerSubstitution,
   PolynomialTimesAffinePowerSubstitution,

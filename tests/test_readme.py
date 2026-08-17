@@ -35,6 +35,9 @@ class TestReadmeExamples(unittest.TestCase):
   ADDED_VERSION_69 = [
     'int cos( x )^4 dx']
 
+  ADDED_VERSION_70 = [
+    'int 1 / ( x * sqrt( x^2 - 1 ) ) dx']
+
   def _solved_examples(self):
     readme = Path(__file__).resolve().parents[1] / 'README.md'
     lines = readme.read_text().splitlines()
@@ -59,7 +62,8 @@ class TestReadmeExamples(unittest.TestCase):
   def test_new_examples_are_the_final_readme_entries(self):
     examples = self._solved_examples()
     added = (self.ADDED_VERSION_58 + self.ADDED_VERSION_59
-      + self.ADDED_VERSION_67 + self.ADDED_VERSION_68 + self.ADDED_VERSION_69)
+      + self.ADDED_VERSION_67 + self.ADDED_VERSION_68 + self.ADDED_VERSION_69
+      + self.ADDED_VERSION_70)
     self.assertEqual(examples[-len(added):], added)
 
 
