@@ -2311,6 +2311,139 @@ class LogarithmOverShiftedLogSquare(IntegrationStrategy):
     return add_integration_constant(SympyExpression(result), intg)
 
 
+class DerivativeComposedSecantOrCosecantSquare(IntegrationStrategy):
+  """Integrate a constant multiple of Q'(x)*sec(Q)^2 or Q'(x)*csc(Q)^2."""
+  description = "derivative substitution in a squared secant or cosecant"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return None
+    for multiplier, power in [(exp.a, exp.b), (exp.b, exp.a)]:
+      if (not power.is_a(Power) or power.exponent != Number(2)
+          or not power.base.is_a(TrigFunction)
+          or power.base.name not in ['sec', 'csc']): continue
+      phase = _laurent_polynomial_coefficients(power.base.arg, intg.var)
+      factor = _laurent_polynomial_coefficients(multiplier, intg.var)
+      if phase == None or factor == None: continue
+      derivative = dict((degree - 1, coefficient * degree)
+        for degree, coefficient in phase.items() if degree != 0)
+      if not derivative: continue
+      pivot = next(iter(derivative))
+      coefficient = factor.get(pivot, Rational(0)) / derivative[pivot]
+      degrees = set(factor) | set(derivative)
+      if coefficient != 0 and all(factor.get(d, Rational(0)) ==
+          coefficient * derivative.get(d, Rational(0)) for d in degrees):
+        return coefficient, power.base.name, power.base.arg
+    return None
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, name, phase = self._parts(intg)
+    primitive = (TrigFunction('tan', phase) if name == 'sec'
+      else Product(Number(-1), TrigFunction('cot', phase)))
+    return add_integration_constant(_scale_by_rational(primitive, coefficient), intg)
+
+
+class SymbolicPowerTimesLogPower(IntegrationStrategy):
+  """Integrate x^m*ln(x)^n using the upper incomplete gamma function."""
+  description = "general symbolic powers of x and ln(x)"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Product): return None
+    for power, logarithm_power in [(exp.a, exp.b), (exp.b, exp.a)]:
+      if (not power.is_a(Power) or power.base != intg.var
+          or not is_constant(power.exponent, intg.var)
+          or not logarithm_power.is_a(Power)
+          or not logarithm_power.base.is_a(Logarithm)
+          or logarithm_power.base.base != 'euler'
+          or logarithm_power.base.arg != intg.var
+          or not is_constant(logarithm_power.exponent, intg.var)): continue
+      return power.exponent, logarithm_power.exponent
+    return None
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    m_native, n_native = self._parts(intg)
+    symbols = {}
+    x = _to_sympy(intg.var, symbols)
+    m, n = _to_sympy(m_native, symbols), _to_sympy(n_native, symbols)
+    result = (-1) ** n * sympy.uppergamma(n + 1,
+      -(m + 1) * sympy.log(x)) / (m + 1) ** (n + 1)
+    return add_integration_constant(SympyExpression(result), intg)
+
+
+class SquareRootOneMinusCosine(IntegrationStrategy):
+  """Integrate sqrt(1-cos(a*x+b)) by the half-angle identity."""
+  description = "half-angle identity for the square root of one minus cosine"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Power) or exp.exponent != Fraction(Number(1), Number(2))
+        or not exp.base.is_a(Sum)): return None
+    for one, negative_cosine in [(exp.base.a, exp.base.b),
+        (exp.base.b, exp.base.a)]:
+      if (one != Number(1) or not negative_cosine.is_a(Product)
+          or negative_cosine.a != Number(-1)
+          or not negative_cosine.b.is_a(TrigFunction)
+          or negative_cosine.b.name != 'cos'): continue
+      slope = linear_coefficient(negative_cosine.b.arg, intg.var)
+      if slope != None and slope != Number(0):
+        return negative_cosine.b.arg, slope
+    return None
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, slope = self._parts(intg)
+    symbols = {}
+    u, a = _to_sympy(phase, symbols), _to_sympy(slope, symbols)
+    result = -2 * sympy.sqrt(2) * sympy.cos(u / 2) / a
+    return add_integration_constant(SympyExpression(result), intg)
+
+
+class ReciprocalQuadraticThreeHalves(IntegrationStrategy):
+  """Integrate 1/(a*x^2+b*x+c)^(3/2) for constant coefficients."""
+  description = "reciprocal three-halves power of a general quadratic"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or exp.numr != Number(1)
+        or not exp.denr.is_a(Power)
+        or exp.denr.exponent != Fraction(Number(3), Number(2))): return None
+    coefficients = _symbolic_polynomial_coefficients(exp.denr.base, intg.var)
+    if coefficients == None or any(d < 0 or d > 2 for d in coefficients): return None
+    if coefficients.get(2, Number(0)) == Number(0): return None
+    return exp.denr.base, coefficients
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    quadratic, coefficients = self._parts(intg)
+    symbols = {}
+    a = _to_sympy(coefficients.get(2, Number(0)), symbols)
+    b = _to_sympy(coefficients.get(1, Number(0)), symbols)
+    c = _to_sympy(coefficients.get(0, Number(0)), symbols)
+    x = _to_sympy(intg.var, symbols)
+    root = sympy.sqrt(_to_sympy(quadratic, symbols))
+    result = 2 * (2 * a * x + b) / ((4 * a * c - b ** 2) * root)
+    return add_integration_constant(SympyExpression(result), intg)
+
+
 class GeneralSymbolicIntegration(IntegrationStrategy):
   """General fallback for elementary and named-special-function antiderivatives."""
   description = "general symbolic integration with constants held fixed"
@@ -2947,4 +3080,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   GeneralSineCosinePowers, ReciprocalSqrtConstantPlusSine,
   ReciprocalXEvenQuarticSquareRoot, QuadraticSquareRootOverX,
   LogarithmOverShiftedLogSquare,
+  DerivativeComposedSecantOrCosecantSquare,
+  SymbolicPowerTimesLogPower, SquareRootOneMinusCosine,
+  ReciprocalQuadraticThreeHalves,
   GeneralSymbolicIntegration]

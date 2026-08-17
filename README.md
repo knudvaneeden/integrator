@@ -250,6 +250,139 @@ Solved:
 
     int x / sqrt( 2 * E * x^2 + K * x - a^2 ) dx
 
+    int 2 * x^3 - 5 * x^2 + 3 * x + 1 dx
+    int 5 - 1 / sqrt( x ) dx
+    int 2 * x^( 1 / 4 ) dx
+    int 5 * x^( 2 / 3 ) dx
+    int 3 / x^4 dx
+    int ( x^2 - 1 ) * sqrt( x ) dx
+    int 4 / x - 5 / x^2 dx
+    int ( 3 * x^2 - 2 * x + 1 ) / sqrt( x ) dx
+    int 3 * sin( x ) + 5 * cos( x ) dx
+    int 7 * sec( x )^2 - sec( x ) * tan( x ) dx
+    int csc( x )^2 + 3 * x^2 dx
+    int x * sqrt( 3 * x ) dx
+    int 1 / sec( x ) dx
+    int tan( x )^2 dx
+    int sqrt( 7 * x + 4 ) dx
+    int 1 / sqrt( x - 1 ) dx
+    int ( 3 * x - 5 )^12 dx
+    int sin( 3 * x - 1 ) dx
+    int sec( x / 2 )^2 dx
+    int cos( sqrt( x ) ) / sqrt( x ) dx
+    int x * ( 4 - 2 * x^2 )^7 dx
+    int x^2 * sqrt( x^3 + 5 ) dx
+    int sqrt( x^2 - 2 * x + 1 ) dx
+    int x^7 * sqrt( x^4 + 1 ) dx
+    int x / sqrt( 1 + 5 * x^2 ) dx
+    int x * sqrt( a * x + b ) dx
+    int sin( 3 * x ) * cos( 3 * x ) dx
+    int sin( x )^4 * cos( x ) dx
+    int csc( x )^5 * cot( x ) dx
+    int sec( 4 * x )^2 * tan( 4 * x ) dx
+    int sin( x ) * cos( x ) * sqrt( 1 + sin( x )^2 ) dx
+    int ( x + 1 ) * ( x - 1 ) dx
+    int ( sqrt( x ) + 1 )^2 dx
+    int sec( x )^2 * sqrt( tan( x )^3 ) dx
+    int tan( x )^2 * sec( x )^4 dx
+    int cos( 5 * x )^3 * sin( 5 * x )^2 dx
+    int sec( x )^5 * tan( x ) dx
+    int ( 3 * x^2 + 2 )^( 1 / 4 ) * x dx
+    int ( 2 - x^3 )^2 * x dx
+    int ( 2 - x^3 )^2 * x^2 dx
+    int ( tan( x ) + cot( x ) )^2 dx
+    int x^2 * csc( x^3 )^2 dx
+    int x^2 * exp( -x ) dx
+    int x^3 * exp( x ) dx
+    int x * sin( x ) dx
+    int x^2 * cos( x ) dx
+    int cos( ln( x ) ) dx
+    int x * cos( 5 * x - 1 ) dx
+    int exp( a * x ) * cos( b * x ) dx
+    int cos( x )^3 dx
+    int cos( x )^4 dx
+    int x * exp( 3 * x ) dx
+    int x * sec( x )^2 dx
+    int x * cos( x )^2 dx
+    int ln( x )^2 dx
+    int x * sin( 2 * x ) dx
+    int x * sin( x^2 ) dx
+    int ln( x ) / x^2 dx
+    int x^2 * exp( 3 * x ) dx
+    int x^2 * arctan( x ) dx
+    int ln( x^2 + 1 ) dx
+    int x^3 / sqrt( 1 + x^2 ) dx
+    int x^2 * ln( x ) dx
+    int cos( x )^n dx
+    int x^n * exp( a * x ) dx
+    int x^n * sin( a * x ) dx
+    int x^2 * sin( x ) dx
+    int cos( x^( 1 / 3 ) ) dx
+    int exp( sqrt( x ) ) dx
+    int x * ( a * x + b )^3 dx
+    int arcsin( x )^2 dx
+    int x^n * ln( x ) dx
+    int x^m * ln( x )^n dx
+    int x^2 * ln( x )^2 dx
+    int cos( a * x )^2 dx
+    int sin( a * x )^2 dx
+    int sin( x ) * cos( x )^2 dx
+    int sin( x )^4 * cos( x )^5 dx
+    int cos( x )^7 dx
+    int cos( x )^4 * sin( x )^2 dx
+    int tan( x / 2 )^2 dx
+    int tan( x )^4 dx
+    int sec( x )^5 dx
+    int tan( x )^5 * sec( x )^3 dx
+    int tan( x )^4 * sec( x )^3 dx
+    int sin( 2 * x ) * cos( 2 * x ) dx
+    int sin( a * x ) * cos( 3 * a * x ) dx
+    int sin( 5 * x ) * sin( 7 * x ) dx
+    int cos( 4 * x ) * cos( 9 * x ) dx
+    int sqrt( x^2 - 1 ) / x dx
+    int x^2 / sqrt( 4 - x^2 ) dx
+    int sqrt( 1 + x^2 ) / x dx
+    int x / sqrt( 2 - x^2 ) dx
+    int 1 / ( x^2 * sqrt( x^2 - 9 ) ) dx
+    int 1 / ( 4 - x^2 )^( 3 / 2 ) dx
+    int 1 / ( x^2 + 9 )^2 dx
+    int 1 / ( x * sqrt( 16 - 9 * x^2 ) ) dx
+    int x^2 * sqrt( 1 - x^2 ) dx
+    int exp( 3 * x ) * sqrt( 1 - exp( 2 * x ) ) dx
+    int 1 / ( x^2 - 6 * x + 13 )^2 dx
+    int sqrt( 1 - cos( x ) ) dx
+    int ( 1 + cos( a * x ) )^( 3 / 2 ) dx
+    int 1 / sqrt( 1 - sin( 2 * x ) ) dx
+    int cos( x )^3 / ( 1 - sin( x ) ) dx
+    int x^2 / ( 4 - x^2 )^( 5 / 2 ) dx
+    int 1 / ( 4 * x - x^2 )^( 3 / 2 ) dx
+    int x * arcsin( x ) dx
+    int sqrt( a^2 - x^2 ) / x dx
+    int 1 / ( 1 - sin( x ) ) dx
+    int 1 / ( x^2 - 9 ) dx
+    int x / ( ( x + 2 ) * ( x + 3 ) ) dx
+    int ( x^3 + x + 1 ) / ( x^3 - 4 * x ) dx
+    int ( 2 * x^2 + 1 ) / ( ( x - 1 ) * ( x - 2 ) * ( x - 3 ) ) dx
+    int ( x^2 - 4 ) / ( x^3 - 3 * x^2 - x + 3 ) dx
+    int ( x^3 + 1 ) / ( x * ( x + 3 ) * ( x + 2 ) * ( x - 1 ) ) dx
+    int x / ( ( x - 3 ) * ( x + 3 ) * ( x + 2 ) * ( x - 2 ) ) dx
+    int ( x - 5 ) / ( x^2 * ( x + 1 ) ) dx
+    int 2 * x / ( ( x - 2 )^2 * ( x + 2 ) ) dx
+    int ( 2 * x + 4 ) / ( x * ( x + 3 )^2 ) dx
+    int 1 / ( x * ( x^2 + 5 ) ) dx
+    int x / ( ( x - 1 ) * ( x^2 + 4 * x + 5 ) ) dx
+    int 1 / ( ( x^2 + 1 ) * ( x^2 + 4 ) ) dx
+    int x^4 / ( x^2 + 9 ) dx
+    int 1 / ( x * ( x^2 + 1 )^2 ) dx
+    int x^2 / ( ( x - 1 ) * ( x^2 + 4 )^2 ) dx
+    int ( x^4 + 1 ) / ( x * ( x^2 + x + 1 )^2 ) dx
+    int ( x - 1 ) / ( x^3 + 2 * x^2 - x - 2 ) dx
+    int ( x^3 + 2 ) / ( x^3 + 5 * x^2 + 6 * x ) dx
+    int exp( x ) / ( 1 + exp( x ) )^2 dx
+    int 1 / ( sin( x ) + cos( x ) ) dx
+    int cos( x ) / ( sin( x ) - 1 ) dx
+    int ( x^2 + 3 ) / ( ( x - 1 )^3 * ( x + 1 ) ) dx
+
 ===
 
 Not solved:

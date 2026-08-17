@@ -956,6 +956,22 @@ class TestStrategies(unittest.TestCase):
       'int 1 / ( x + log( x )^2 ) dx'), SubLogger('test'))
     self.assertEqual('int[' in repr(result), True)
 
+  def test_PdfGeneralizedFamilies(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int x^2 * csc( x^3 )^2 dx',
+      'int x^m * ln( x )^n dx',
+      'int sqrt( 1 - cos( x ) ) dx',
+      'int 1 / ( 4*x - x^2 )^( 3/2 ) dx']
+    expected_fragments = ['cot(', 'uppergamma', 'sqrt(2)', 'sqrt(-x**2 + 4*x)']
+    for problem, fragment in zip(problems, expected_fragments):
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+      self.assertEqual(fragment in repr(result), True, problem)
+      self.assertEqual(len(result.latex()) > 0, True, problem)
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph
