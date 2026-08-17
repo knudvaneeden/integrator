@@ -323,15 +323,29 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(repr(result),
       '(((-1 * (((2 * x) + (-1 * (x ^ 2))) ^ (1 / 2))) + (2 * arcsin((x + -1)))) + C)')
 
-  def test_SquaredFractionalPowerBinomial(self):
+  def test_PolynomialTimesRationalPowerBinomialExpansion(self):
     from parseintg import parse
     from solver import attempt_integral
     from sublogger import SubLogger
-    problem = 'int x * ( x^(1/2) + x^(-1/2) )^2 dx'
-    result = attempt_integral(parse(problem), SubLogger('test'))
-    self.assertEqual('int[' in repr(result), False)
+    original = 'int x * ( x^(1/2) + x^(-1/2) )^2 dx'
+    result = attempt_integral(parse(original), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), False, original)
     self.assertEqual(repr(result),
-      '(((((1 / 3) * (x ^ 3)) + (x ^ 2)) + x) + C)')
+      '(((((x ^ 3) / 3) + (x ^ 2)) + x) + C)')
+
+    requested = 'int x * ( 1 - sqrt( x ) )^2 dx'
+    result = attempt_integral(parse(requested), SubLogger('test'))
+    self.assertEqual(repr(result),
+      '(((((x ^ 3) / 3) + ((-4 * (x ^ (5 / 2))) / 5)) + '
+      '((x ^ 2) / 2)) + C)', requested)
+
+    general_cases = [
+      'int ( 2 + 3 * x^2 ) * ( 1 - 2 * x^(1/3) )^4 dx',
+      'int ( x^(-2) + 1 ) * ( 3 * x^(2/3) + 2 * x^(-1/2) )^3 dx',
+      'int x^(-1) * ( 1 + sqrt( x ) )^2 dx']
+    for problem in general_cases:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
 
   def test_ExponentialRationalSubstitution(self):
     from parseintg import parse
@@ -507,6 +521,11 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('int[' in repr(result), False)
     self.assertEqual(repr(result),
       '(((((x ^ 2) + 16) ^ (3 / 2)) / 3) + C)')
+
+    reciprocal_root = 'int x / sqrt( x^2 - 15 ) dx'
+    result = attempt_integral(parse(reciprocal_root), SubLogger('test'))
+    self.assertEqual(repr(result),
+      '((((x ^ 2) + -15) ^ (1 / 2)) + C)', reciprocal_root)
 
   def test_QuadraticDerivativePowerSubstitutionGeneralPower(self):
     from parseintg import parse

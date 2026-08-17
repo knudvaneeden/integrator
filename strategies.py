@@ -508,24 +508,98 @@ class CompositeSquareSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
-class SquaredFractionalPowerBinomial(IntegrationStrategy):
-  """Expand x*(x^(1/2)+x^(-1/2))^2 to (x+1)^2."""
-  description = "expand and combine fractional powers before using the power rule"
+def _rational_power_monomial(expr, var):
+  """Return (coefficient, exponent) for c*x^r with rational c and r."""
+  value = _rational_value(expr)
+  if value != None: return value, Rational(0)
+  if expr == var: return Rational(1), Rational(1)
+  if expr.is_a(Power) and expr.base == var:
+    exponent = _rational_value(expr.exponent)
+    if exponent != None: return Rational(1), exponent
+  if expr.is_a(Product):
+    a = _rational_power_monomial(expr.a, var)
+    b = _rational_power_monomial(expr.b, var)
+    if a != None and b != None: return a[0] * b[0], a[1] + b[1]
+  if expr.is_a(Fraction):
+    numr = _rational_power_monomial(expr.numr, var)
+    denr = _rational_power_monomial(expr.denr, var)
+    if numr != None and denr != None and denr[0] != 0:
+      return numr[0] / denr[0], numr[1] - denr[1]
+  return None
+
+
+class PolynomialTimesRationalPowerBinomialExpansion(IntegrationStrategy):
+  """Integrate P(x)*(a*x^r+b*x^s)^N by finite binomial expansion."""
+  description = ("expand an integer power of a rational-power binomial, "
+    "combine powers, and apply the power rule")
+
+  @classmethod
+  def _parts(self, intg):
+    factors = []
+
+    def collect(expr):
+      if expr.is_a(Product):
+        collect(expr.a)
+        collect(expr.b)
+      else:
+        factors.append(expr)
+
+    collect(intg.simplified().exp)
+    candidate_index = None
+    candidate = None
+    for index, factor in enumerate(factors):
+      if not factor.is_a(Power) or not factor.base.is_a(Sum): continue
+      exponent = _rational_value(factor.exponent)
+      if (exponent == None or exponent.denominator != 1
+          or exponent < 0):
+        continue
+      first = _rational_power_monomial(factor.base.a, intg.var)
+      second = _rational_power_monomial(factor.base.b, intg.var)
+      if first != None and second != None and first[1] != second[1]:
+        candidate_index = index
+        candidate = (first, second, int(exponent))
+        break
+    if candidate == None: return None
+
+    multiplier = Number(1)
+    for index, factor in enumerate(factors):
+      if index != candidate_index:
+        multiplier = Product(multiplier, factor).simplified()
+    polynomial = _laurent_polynomial_coefficients(multiplier, intg.var)
+    if polynomial == None: return None
+    return candidate[0], candidate[1], candidate[2], polynomial
 
   @classmethod
   def applicable(self, intg):
-    exp = intg.simplified().exp
-    x = intg.var
-    half = Fraction(Number(1), Number(2))
-    minus_half = Fraction(Number(-1), Number(2))
-    binomial = Sum(Power(x, half), Power(x, minus_half))
-    return exp == Product(x, Power(binomial, Number(2)))
+    return self._parts(intg) != None
 
   @classmethod
   def apply(self, intg):
-    x = intg.var
-    cubic = Product(Fraction(Number(1), Number(3)), Power(x, Number(3)))
-    primitive = Sum(Sum(cubic, Power(x, Number(2))), x)
+    first, second, binomial_exponent, polynomial = self._parts(intg)
+    expanded = {}
+    for degree, polynomial_coefficient in polynomial.items():
+      for j in range(binomial_exponent + 1):
+        exponent = (Rational(degree)
+          + first[1] * (binomial_exponent - j) + second[1] * j)
+        coefficient = (polynomial_coefficient
+          * Rational(comb(binomial_exponent, j))
+          * first[0] ** (binomial_exponent - j) * second[0] ** j)
+        expanded[exponent] = expanded.get(exponent, Rational(0)) + coefficient
+
+    terms = []
+    for exponent in sorted(expanded.keys(), reverse=True):
+      coefficient = expanded[exponent]
+      if coefficient == 0: continue
+      integrated_exponent = exponent + 1
+      if integrated_exponent == 0:
+        term = _scale_by_rational(Logarithm(intg.var), coefficient)
+      else:
+        power = (intg.var if integrated_exponent == 1 else
+          Power(intg.var, _rational_expression(integrated_exponent)))
+        term = _scale_by_rational(power, coefficient / integrated_exponent)
+      terms.append(term)
+    primitive = terms[0] if terms else Number(0)
+    for term in terms[1:]: primitive = Sum(primitive, term)
     return add_integration_constant(primitive, intg)
 
 
@@ -2258,7 +2332,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   TrigSquareBinomialIntegerPower,
   SecSquaredRationalTangent, ReciprocalSecSquared,
   ExponentialOverLinearQuotientDerivative, CompositeSquareSubstitution,
-  SquaredFractionalPowerBinomial,
+  PolynomialTimesRationalPowerBinomialExpansion,
   ExponentialRationalSubstitution, ExponentialBinomialLogSubstitution,
   ReciprocalOnePlusOrMinusCosine, ReciprocalCosSquared,
   SineFourthCosineFourth, RationalEvenFourthProduct,

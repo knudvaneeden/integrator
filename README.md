@@ -5,10 +5,7 @@ Solved:
     int x^2 dx
     int x * ( x + 1 ) dx
     int x + x^2 dx
-    int 4 - x^2 dx
-    int 2 * x^2 - x^3 dx
     int 2 + cos( x ) dx
-    int sin( x )^2 * cos( x ) dx
     int sin( x )^3 * cos( x )^3 dx
     int sin( x )^(1/3) * cos( x )^3 dx
     int sin( x )^(1/3) * cos( x )^3 * tan( x )^2 dx
@@ -87,6 +84,22 @@ Solved:
     int sin( m * x ) * sin( n * x ) dx
     int cos( m * x ) * cos( n * x ) dx
     int x / ( x^2 + x ) dx
+    int sqrt( 5 * x + 4 ) dx
+    int sin( x )^2 * cos( x ) dx
+    int 4 - x^2 dx
+    int 2 * x^2 - x^3 dx
+    int 1 / x^2 - 1 / x^3 dx
+    int 1 / x^(1/2) dx
+    int 2 + x dx
+    int 2 - x^2 dx
+    int 3 - 2 * x + x^2 dx
+    int x * ( 1 - x^2 ) dx
+    int x * ( 1 - x ) * sqrt( x ) dx
+    int sqrt( 1 + 3 * x ) dx
+    int x^2 * ( x^3 + 1 ) dx
+    int 1 / sqrt( 1 + x ) dx
+    int x / sqrt( x^2 - 15 ) dx
+    int x * ( 1 - sqrt( x ) )^2 dx
 
 ===
 

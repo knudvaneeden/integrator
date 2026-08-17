@@ -5,12 +5,33 @@ from parseintg import parse
 
 
 class TestReadmeExamples(unittest.TestCase):
-  def test_solved_examples_are_semantically_unique(self):
+  ADDED_VERSION_58 = [
+    'int sqrt( 5 * x + 4 ) dx',
+    'int sin( x )^2 * cos( x ) dx',
+    'int 4 - x^2 dx',
+    'int 2 * x^2 - x^3 dx',
+    'int 1 / x^2 - 1 / x^3 dx',
+    'int 1 / x^(1/2) dx',
+    'int 2 + x dx',
+    'int 2 - x^2 dx',
+    'int 3 - 2 * x + x^2 dx',
+    'int x * ( 1 - x^2 ) dx',
+    'int x * ( 1 - x ) * sqrt( x ) dx',
+    'int sqrt( 1 + 3 * x ) dx',
+    'int x^2 * ( x^3 + 1 ) dx',
+    'int 1 / sqrt( 1 + x ) dx',
+    'int x / sqrt( x^2 - 15 ) dx',
+    'int x * ( 1 - sqrt( x ) )^2 dx']
+
+  def _solved_examples(self):
     readme = Path(__file__).resolve().parents[1] / 'README.md'
     lines = readme.read_text().splitlines()
     start = lines.index('Solved:') + 1
     end = lines.index('===', start)
-    examples = [line.strip() for line in lines[start:end] if line.strip()]
+    return [line.strip() for line in lines[start:end] if line.strip()]
+
+  def test_solved_examples_are_semantically_unique(self):
+    examples = self._solved_examples()
 
     first_example_by_expression = {}
     duplicates = []
@@ -22,6 +43,11 @@ class TestReadmeExamples(unittest.TestCase):
         first_example_by_expression[expression] = example
 
     self.assertEqual(duplicates, [])
+
+  def test_new_examples_are_the_final_readme_entries(self):
+    examples = self._solved_examples()
+    self.assertEqual(examples[-len(self.ADDED_VERSION_58):],
+      self.ADDED_VERSION_58)
 
 
 if __name__ == '__main__':
