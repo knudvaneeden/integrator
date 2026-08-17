@@ -555,9 +555,11 @@ class TestStrategies(unittest.TestCase):
     from sublogger import SubLogger
     requested = 'int 1 / ( 1 + x^3 ) dx'
     result = attempt_integral(parse(requested), SubLogger('test'))
-    self.assertEqual(repr(result),
-      '((x * hypergeometric2F1(1, (1 / 3), (4 / 3), '
-      '(-1 * (x ^ 3)))) + C)')
+    rendered = repr(result)
+    self.assertEqual('log(x + 1)/3' in rendered, True)
+    self.assertEqual('log(x**2 - x + 1)/6' in rendered, True)
+    self.assertEqual('sqrt(3)*atan' in rendered, True)
+    self.assertEqual('hypergeometric2F1' in rendered, False)
 
     general_cases = [
       'int 3 * x^2 / ( 2 + 5 * x^4 ) dx',
@@ -566,6 +568,19 @@ class TestStrategies(unittest.TestCase):
     for problem in general_cases:
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
+
+  def test_RationalPolynomialPartialFractionsGeneral(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int ( 2*x^5 + 3*x + 1 ) / ( x^4 - 1 ) dx',
+      'int 1 / ( x^6 - 1 ) dx',
+      'int x^3 / ( x + 1 ) dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+      self.assertEqual('hypergeometric2F1' in repr(result), False, problem)
 
   def test_QuadraticDerivativePowerSubstitutionSquareRoot(self):
     from parseintg import parse

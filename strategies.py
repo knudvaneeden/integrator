@@ -2583,6 +2583,35 @@ class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class RationalPolynomialPartialFractions(IntegrationStrategy):
+  """Integrate P(x)/Q(x) over the rationals by division and partial fractions."""
+  description = "general rational-polynomial division and partial fractions"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Fraction): return None
+    numerator = _laurent_polynomial_coefficients(exp.numr, intg.var)
+    denominator = _laurent_polynomial_coefficients(exp.denr, intg.var)
+    if numerator == None or denominator == None: return None
+    if any(degree < 0 for degree in numerator): return None
+    if any(degree < 0 for degree in denominator): return None
+    if not denominator or max(denominator) == 0: return None
+    return exp
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    symbols = {}
+    expression = _to_sympy(self._parts(intg), symbols)
+    variable = symbols[repr(intg.var)]
+    decomposed = sympy.apart(sympy.cancel(expression), variable)
+    primitive = sympy.integrate(decomposed, variable)
+    return add_integration_constant(SympyExpression(primitive), intg)
+
+
 class MonomialOverPowerBinomialHypergeometric(IntegrationStrategy):
   """Integrate c*x^p/(d+e*x^q) for rational parameters."""
   description = ("general monomial-over-power-binomial integral using "
@@ -2911,6 +2940,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ExponentialBinomialPowerSubstitution,
   ExponentialQuadraticDenominatorSubstitution,
   LaurentPolynomialOverOnePlusSquare,
+  RationalPolynomialPartialFractions,
   MonomialOverPowerBinomialHypergeometric,
   ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples,
