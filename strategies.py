@@ -2622,20 +2622,19 @@ class NestedQuadraticRadical(IntegrationStrategy):
         and possible_root.exponent == half):
         u, inner_root = candidate_u, possible_root
         break
-    if inner_root == None or not inner_root.base.is_a(Sum): return None
-    u_squared = Power(u, Number(2))
-    c = None
-    for square, negative_constant in [
-      (inner_root.base.a, inner_root.base.b),
-      (inner_root.base.b, inner_root.base.a)]:
-      if square == u_squared:
-        candidate_c = self._negative_part(negative_constant)
-        if candidate_c != None and is_constant(candidate_c, intg.var):
-          c = candidate_c
-          break
-    if c == None: return None
     slope = linear_coefficient(u, intg.var)
     if slope == None or slope == Number(0): return None
+    symbols = {}
+    sympy_u = _to_sympy(u, symbols)
+    sympy_inner = _to_sympy(inner_root.base, symbols)
+    sympy_x = _to_sympy(intg.var, symbols)
+    difference = sympy.simplify(sympy_u ** 2 - sympy_inner)
+    if difference == 0 or difference.has(sympy_x): return None
+    if difference.is_Rational:
+      c = _rational_expression(Rational(
+        int(difference.p), int(difference.q)))
+    else:
+      c = SympyExpression(difference)
     return outer, c, slope
 
   @classmethod
