@@ -392,9 +392,16 @@ class TrigFunction(Expression):
       return "\\arcsin\\left(%s\\right)" % self.arg.latex()
     if self.name == 'atan':
       return "\\arctan\\left(%s\\right)" % self.arg.latex()
-    if self.name in ['acos', 'acot', 'asec', 'acsc']:
-      return "\\arc%s\\left(%s\\right)" % (self.name[1:], self.arg.latex())
-    if self.name in ['arcsin', 'arccos', 'arctan', 'arccot', 'arcsec', 'arccsc']:
+    if self.name == 'acos':
+      return "\\arccos\\left(%s\\right)" % self.arg.latex()
+    if self.name in ['acot', 'asec', 'acsc']:
+      function_name = {'acot': 'arccot', 'asec': 'arcsec', 'acsc': 'arccsc'}[self.name]
+      return "\\operatorname{%s}\\left(%s\\right)" % (function_name,
+        self.arg.latex())
+    if self.name in ['arccot', 'arcsec', 'arccsc']:
+      return "\\operatorname{%s}\\left(%s\\right)" % (self.name,
+        self.arg.latex())
+    if self.name in ['arcsin', 'arccos', 'arctan']:
       return "\\%s\\left(%s\\right)" % (self.name, self.arg.latex())
     if self.name == 'exp':
       return "e^{%s}" % self.arg.latex()

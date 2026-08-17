@@ -124,6 +124,8 @@ class TestStrategies(unittest.TestCase):
     requested = attempt_integral(
       parse('int 1 / ( x * sqrt( x^2 - 1 ) ) dx'), SubLogger('test'))
     self.assertEqual(repr(requested), '(arcsec(x) + C)')
+    self.assertEqual(r'\operatorname{arcsec}' in requested.latex(), True)
+    self.assertEqual(r'\arcsec' in requested.latex(), False)
     general = attempt_integral(
       parse('int 3 / ( x * sqrt( 2 * x^2 - 5 ) ) dx'), SubLogger('test'))
     self.assertEqual('int[' in repr(general), False)

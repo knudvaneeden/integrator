@@ -48,6 +48,18 @@ class TestElements(unittest.TestCase):
     self.assertEqual(len(set(symbols)), len(symbols))
 
 
+  def test_InverseTrigLatexUsesSupportedMathJaxCommands(self):
+    x = VariableSet().variable('x')
+    self.assertEqual(TrigFunction('arcsec', x).latex(),
+      r'\operatorname{arcsec}\left(x\right)')
+    self.assertEqual(TrigFunction('arccsc', x).latex(),
+      r'\operatorname{arccsc}\left(x\right)')
+    self.assertEqual(TrigFunction('arccot', x).latex(),
+      r'\operatorname{arccot}\left(x\right)')
+    self.assertEqual(TrigFunction('arcsin', x).latex(),
+      r'\arcsin\left(x\right)')
+
+
   def test_Sum(self):
     x = Number(3)
     y = Number(6)
