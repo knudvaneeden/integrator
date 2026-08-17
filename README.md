@@ -311,6 +311,7 @@ Solved:
     int x^n * ln( x ) dx
     int x^n * sin( a * x ) dx
     int x^n dx
+    int sqrt( x - sqrt( x^2 - 1 ) ) dx
 
 ===
 

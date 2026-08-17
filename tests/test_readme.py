@@ -6,6 +6,7 @@ from parseintg import parse
 
 class TestReadmeExamples(unittest.TestCase):
   CANONICAL_VERSION_72_COUNT = 311
+  ADDED_VERSION_73 = ['int sqrt( x - sqrt( x^2 - 1 ) ) dx']
   ADDED_VERSION_58 = [
     'int sqrt( 5 * x + 4 ) dx',
     'int sin( x )^2 * cos( x ) dx',
@@ -70,9 +71,10 @@ class TestReadmeExamples(unittest.TestCase):
 
   def test_new_examples_are_the_final_readme_entries(self):
     examples = self._solved_examples()
-    self.assertEqual(len(examples), self.CANONICAL_VERSION_72_COUNT)
+    self.assertEqual(len(examples),
+      self.CANONICAL_VERSION_72_COUNT + len(self.ADDED_VERSION_73))
     self.assertEqual(examples[0], 'int ( 1 + 2 * x^2 ) * exp( x^2 ) dx')
-    self.assertEqual(examples[-1], 'int x^n dx')
+    self.assertEqual(examples[-len(self.ADDED_VERSION_73):], self.ADDED_VERSION_73)
 
 
 if __name__ == '__main__':

@@ -36,6 +36,14 @@ class TestVersion72Restoration(unittest.TestCase):
     self.assertEqual(latex, r'\operatorname{arcsec}\left(x\right)')
     self.assertNotIn(r'\arcsec', latex)
 
+  def test_nested_quadratic_radical_general_rule(self):
+    cases = [
+      'int sqrt( x - sqrt( x^2 - 1 ) ) dx',
+      'int sqrt( 2*x+1 - sqrt( (2*x+1)^2 - 9 ) ) dx']
+    for problem in cases:
+      result = self.solve(problem)
+      self.assertNotIn('int[', repr(result), problem)
+
 
 if __name__ == '__main__':
   unittest.main()

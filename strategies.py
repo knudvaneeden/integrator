@@ -2594,6 +2594,62 @@ class ArcTangentAffineSquareRoot(IntegrationStrategy):
       Product(Number(-1), root))
     return add_integration_constant(Fraction(numerator, coefficient).simplified(), intg)
 
+class NestedQuadraticRadical(IntegrationStrategy):
+  """Integrate sqrt(u-sqrt(u^2-c)) when u is affine in x."""
+  description = "nested quadratic-radical substitution"
+
+  @classmethod
+  def _negative_part(self, expr):
+    if expr.is_a(Number) and expr.n < 0: return Number(-expr.n)
+    if expr.is_a(Product):
+      if expr.a == Number(-1): return expr.b
+      if expr.b == Number(-1): return expr.a
+    return None
+
+  @classmethod
+  def _parts(self, intg):
+    outer = intg.simplified().exp
+    half = Fraction(Number(1), Number(2))
+    if (not outer.is_a(Power) or outer.exponent != half
+      or not outer.base.is_a(Sum)):
+      return None
+    u = None
+    inner_root = None
+    for candidate_u, candidate_negative in [
+      (outer.base.a, outer.base.b), (outer.base.b, outer.base.a)]:
+      possible_root = self._negative_part(candidate_negative)
+      if (possible_root != None and possible_root.is_a(Power)
+        and possible_root.exponent == half):
+        u, inner_root = candidate_u, possible_root
+        break
+    if inner_root == None or not inner_root.base.is_a(Sum): return None
+    u_squared = Power(u, Number(2))
+    c = None
+    for square, negative_constant in [
+      (inner_root.base.a, inner_root.base.b),
+      (inner_root.base.b, inner_root.base.a)]:
+      if square == u_squared:
+        candidate_c = self._negative_part(negative_constant)
+        if candidate_c != None and is_constant(candidate_c, intg.var):
+          c = candidate_c
+          break
+    if c == None: return None
+    slope = linear_coefficient(u, intg.var)
+    if slope == None or slope == Number(0): return None
+    return outer, c, slope
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    radical, c, slope = self._parts(intg)
+    primitive = Sum(Fraction(Power(radical, Number(3)), Number(3)),
+      Fraction(c, radical))
+    primitive = Fraction(primitive, slope).simplified()
+    return add_integration_constant(primitive, intg)
+
+
 class GeneralSymbolicIntegration(IntegrationStrategy):
   """General fallback for elementary and named-special-function antiderivatives."""
   description = "general symbolic integration with constants held fixed"
@@ -3235,4 +3291,5 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   DerivativeComposedSecantOrCosecantSquare,
   SymbolicPowerTimesLogPower, SquareRootOneMinusCosine,
   ReciprocalQuadraticThreeHalves,
+  NestedQuadraticRadical,
   GeneralSymbolicIntegration]
