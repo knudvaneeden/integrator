@@ -51,6 +51,11 @@ class TestElements(unittest.TestCase):
     self.assertEqual(repr(parse('(1-x^2)^(-1/2)')),
       '((1 + (-1 * (x ^ 2))) ^ ((-1 * 1) / 2))')
 
+  def test_named_constant_and_integral_leading_minus(self):
+    self.assertEqual('epsilon' in repr(parse('int epsilon^2 dx')), True)
+    self.assertEqual(r'\epsilon' in parse('int epsilon^2 dx').latex(), True)
+    self.assertEqual(repr(parse('int -sin(x) dx')).startswith('int['), True)
+
   def test_parser(self):
     parsed = parse('int x^2 dx')
     self.assertEqual(isinstance(parsed, Integral), True)

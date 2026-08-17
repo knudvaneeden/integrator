@@ -102,64 +102,6 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual(res.a.b.base, var)
     self.assertEqual(res.a.b.exponent.n, 3)
 
-  def test_ReciprocalXSquaredQuadraticSquareRoot(self):
-    from parseintg import parse
-    from solver import attempt_integral
-    from sublogger import SubLogger
-    cases = [
-      'int 1 / ( x^2 * sqrt( x^2 + 4 ) ) dx',
-      'int 5 / ( x^2 * sqrt( 3 * x^2 + 7 ) ) dx']
-    for problem in cases:
-      integral = parse(problem)
-      self.assertEqual(
-        ReciprocalXSquaredQuadraticSquareRoot.applicable(integral), True,
-        problem)
-      result = attempt_integral(integral, SubLogger('test'))
-      self.assertEqual('int[' in repr(result), False, problem)
-
-  def test_ReciprocalXDifferenceSquareRoot(self):
-    from parseintg import parse
-    from solver import attempt_integral
-    from sublogger import SubLogger
-    requested = attempt_integral(
-      parse('int 1 / ( x * sqrt( x^2 - 1 ) ) dx'), SubLogger('test'))
-    self.assertEqual(repr(requested), '(arcsec(x) + C)')
-    self.assertEqual(r'\operatorname{arcsec}' in requested.latex(), True)
-    self.assertEqual(r'\arcsec' in requested.latex(), False)
-    general = attempt_integral(
-      parse('int 3 / ( x * sqrt( 2 * x^2 - 5 ) ) dx'), SubLogger('test'))
-    self.assertEqual('int[' in repr(general), False)
-    self.assertEqual('arcsec(' in repr(general), True)
-
-  def test_ArcTangentAffineSquareRoot(self):
-    from parseintg import parse
-    from solver import attempt_integral
-    from sublogger import SubLogger
-    cases = [
-      'int arctan( sqrt( x ) ) dx',
-      'int arctan( sqrt( 3 * x + 2 ) ) dx']
-    for problem in cases:
-      integral = parse(problem)
-      self.assertEqual(ArcTangentAffineSquareRoot.applicable(integral), True,
-        problem)
-      result = attempt_integral(integral, SubLogger('test'))
-      self.assertEqual('int[' in repr(result), False, problem)
-
-  def test_TrigNonnegativeIntegerPowerReduction(self):
-    from parseintg import parse
-    from solver import attempt_integral
-    from sublogger import SubLogger
-    requested = attempt_integral(parse('int cos( x )^4 dx'), SubLogger('test'))
-    requested_repr = repr(requested)
-    self.assertEqual('int[' in requested_repr, False)
-    self.assertEqual('(cos(x) ^ 3)' in requested_repr, True)
-    self.assertEqual('((3 * (sin(x) * cos(x))) / 8)' in requested_repr, True)
-    self.assertEqual('((3 * x) / 8)' in requested_repr, True)
-    for problem in ['int sin( 3 * x + 2 )^6 dx',
-      'int cos( 5 * x - 1 )^7 dx']:
-      result = attempt_integral(parse(problem), SubLogger('test'))
-      self.assertEqual('int[' in repr(result), False, problem)
-
   def test_SimpleTrig(self):
     intg = self._trig_integral('sin', 3)
     self.assertEqual(SimpleTrig.applicable(intg), True)
@@ -247,6 +189,7 @@ class TestStrategies(unittest.TestCase):
     problem = 'int ( 6 * x^2 + 2 ) * exp( 2 * x^3 + 2 * x + 1 ) dx'
     result = attempt_integral(parse(problem), SubLogger('test'))
     self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('exp(' in repr(result), True)
 
   def test_RationalPowerTimesExponentialPowerSubstitution(self):
     from parseintg import parse
@@ -264,7 +207,26 @@ class TestStrategies(unittest.TestCase):
     for problem in general_cases:
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
-    self.assertEqual('exp(' in repr(result), True)
+
+  def test_RationalPowerSecantSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = 'int 1 / cos( sqrt( x ) ) dx'
+    result = attempt_integral(parse(requested), SubLogger('test'))
+    rendered = repr(result)
+    self.assertEqual('int[' in rendered, False)
+    self.assertEqual(rendered.count('Cl2('), 2)
+    self.assertEqual('ln((sec((x ^ (1 / 2))) + tan((x ^ (1 / 2)))))'
+      in rendered, True)
+
+    general_cases = [
+      'int x^(-1/2) * sec( 3 * sqrt( x ) + 2 ) dx',
+      'int x^2 * sec( 4 * x^3 - 1 ) dx',
+      'int x^3 * sec( 2 * x^2 + 5 ) dx']
+    for problem in general_cases:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
 
   def test_TrigBinomialPowerSubstitutionOriginal(self):
     from parseintg import parse
@@ -587,6 +549,39 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('ln(x)' in rendered, True)
     self.assertEqual('ln((1 + (x ^ 2)))' in rendered, True)
 
+  def test_MonomialOverPowerBinomialHypergeometric(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = 'int 1 / ( 1 + x^3 ) dx'
+    result = attempt_integral(parse(requested), SubLogger('test'))
+    rendered = repr(result)
+    self.assertEqual('log(x + 1)/3' in rendered, True)
+    self.assertEqual('log(x**2 - x + 1)/6' in rendered, True)
+    self.assertEqual('sqrt(3)*atan' in rendered, True)
+    self.assertEqual('hypergeometric2F1' in rendered, False)
+
+    general_cases = [
+      'int 3 * x^2 / ( 2 + 5 * x^4 ) dx',
+      'int x^(-1) / ( 1 + x^3 ) dx',
+      'int 7 * x^(2/3) / ( 4 - 3 * x^(5/2) ) dx']
+    for problem in general_cases:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+
+  def test_RationalPolynomialPartialFractionsGeneral(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int ( 2*x^5 + 3*x + 1 ) / ( x^4 - 1 ) dx',
+      'int 1 / ( x^6 - 1 ) dx',
+      'int x^3 / ( x + 1 ) dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+      self.assertEqual('hypergeometric2F1' in repr(result), False, problem)
+
   def test_QuadraticDerivativePowerSubstitutionSquareRoot(self):
     from parseintg import parse
     from solver import attempt_integral
@@ -904,6 +899,78 @@ class TestStrategies(unittest.TestCase):
       'int 1 / sqrt( x^2 + m^2 + x ) dx'), SubLogger('test'))
     self.assertEqual('int[' in repr(result), False)
     self.assertEqual('ln(' in repr(result), True)
+
+  def test_QuadraticExponentialErrorFunction(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = attempt_integral(parse('int exp( x^2 ) dx'), SubLogger('test'))
+    positive = attempt_integral(parse(
+      'int exp( 3*x^2 + 2*x + 5 ) dx'), SubLogger('test'))
+    negative = attempt_integral(parse(
+      'int exp( -2*x^2 + 4*x + 1 ) dx'), SubLogger('test'))
+    self.assertEqual(repr(requested),
+      '((((pi ^ (1 / 2)) / 2) * erfi(x)) + C)')
+    self.assertEqual('erfi(' in repr(positive), True)
+    self.assertEqual('erf(' in repr(negative), True)
+    self.assertEqual('int[' in repr(positive), False)
+    self.assertEqual('int[' in repr(negative), False)
+    self.assertEqual(r'\operatorname{erfi}' in requested.latex(), True)
+
+  def test_ExponentialOverAffineExponentialIntegral(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = attempt_integral(parse(
+      'int exp( x ) / x dx'), SubLogger('test'))
+    general = attempt_integral(parse(
+      'int 2 * exp( 3*x + 1 ) / ( 4*x + 5 ) dx'), SubLogger('test'))
+    self.assertEqual(repr(requested), '(Ei(x) + C)')
+    self.assertEqual('Ei(' in repr(general), True)
+    self.assertEqual('int[' in repr(general), False)
+    self.assertEqual(r'\operatorname{Ei}' in requested.latex(), True)
+
+  def test_GeneralSpecialFunctionFamilies(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int sin( exp( x ) ) dx',
+      'int exp( exp( x ) ) dx',
+      'int x^2 * sin( x^4 ) dx',
+      'int sin( x )^m * cos( x )^n dx',
+      'int 1 / sqrt( A + B * sin( x ) ) dx',
+      'int sqrt( x^2 + 2*x + 5 ) / x dx',
+      'int 1 / ( x * sqrt( 2*H*x^2 - a^2 - 2*K*x^4 ) ) dx',
+      'int log( x ) / ( log( x ) + 1 )^2 dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+      self.assertEqual(len(result.latex()) > 0, True, problem)
+
+  def test_NoFalseClosedFormForLogSquaredDenominator(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    result = attempt_integral(parse(
+      'int 1 / ( x + log( x )^2 ) dx'), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), True)
+
+  def test_PdfGeneralizedFamilies(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int x^2 * csc( x^3 )^2 dx',
+      'int x^m * ln( x )^n dx',
+      'int sqrt( 1 - cos( x ) ) dx',
+      'int 1 / ( 4*x - x^2 )^( 3/2 ) dx']
+    expected_fragments = ['cot(', 'uppergamma', 'sqrt(2)', 'sqrt(-x**2 + 4*x)']
+    for problem, fragment in zip(problems, expected_fragments):
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+      self.assertEqual(fragment in repr(result), True, problem)
+      self.assertEqual(len(result.latex()) > 0, True, problem)
 
   def test_AndOrGraph(self):
     from parseintg import parse

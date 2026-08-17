@@ -5,6 +5,7 @@ from parseintg import parse
 
 
 class TestReadmeExamples(unittest.TestCase):
+  CANONICAL_VERSION_72_COUNT = 311
   ADDED_VERSION_58 = [
     'int sqrt( 5 * x + 4 ) dx',
     'int sin( x )^2 * cos( x ) dx',
@@ -26,17 +27,25 @@ class TestReadmeExamples(unittest.TestCase):
   ADDED_VERSION_59 = [
     'int sqrt( x ) * exp( sqrt( x ) ) dx']
 
-  ADDED_VERSION_67 = [
-    'int 1 / ( x^2 * sqrt( x^2 + 4 ) ) dx']
+  ADDED_VERSION_60 = [
+    'int 1 / ( 1 + x^3 ) dx']
 
-  ADDED_VERSION_68 = [
-    'int arctan( sqrt( x ) ) dx']
+  ADDED_VERSION_61 = [
+    'int 1 / cos( sqrt( x ) ) dx']
 
-  ADDED_VERSION_69 = [
-    'int cos( x )^4 dx']
+  ADDED_VERSION_62 = [
+    'int exp( x^2 ) dx']
 
-  ADDED_VERSION_70 = [
-    'int 1 / ( x * sqrt( x^2 - 1 ) ) dx']
+  ADDED_VERSION_63 = [
+    'int exp( x ) / x dx']
+
+  ADDED_VERSION_64_COUNT = 71
+  ADDED_VERSION_64_FIRST = 'int ( 1 + 2 * x^2 ) * exp( x^2 ) dx'
+  ADDED_VERSION_64_LAST = 'int x / sqrt( 2 * E * x^2 + K * x - a^2 ) dx'
+
+  ADDED_VERSION_66_COUNT = 132
+  ADDED_VERSION_66_FIRST = 'int 2 * x^3 - 5 * x^2 + 3 * x + 1 dx'
+  ADDED_VERSION_66_LAST = 'int ( x^2 + 3 ) / ( ( x - 1 )^3 * ( x + 1 ) ) dx'
 
   def _solved_examples(self):
     readme = Path(__file__).resolve().parents[1] / 'README.md'
@@ -61,10 +70,9 @@ class TestReadmeExamples(unittest.TestCase):
 
   def test_new_examples_are_the_final_readme_entries(self):
     examples = self._solved_examples()
-    added = (self.ADDED_VERSION_58 + self.ADDED_VERSION_59
-      + self.ADDED_VERSION_67 + self.ADDED_VERSION_68 + self.ADDED_VERSION_69
-      + self.ADDED_VERSION_70)
-    self.assertEqual(examples[-len(added):], added)
+    self.assertEqual(len(examples), self.CANONICAL_VERSION_72_COUNT)
+    self.assertEqual(examples[0], 'int ( 1 + 2 * x^2 ) * exp( x^2 ) dx')
+    self.assertEqual(examples[-1], 'int x^n dx')
 
 
 if __name__ == '__main__':

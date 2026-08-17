@@ -88,6 +88,19 @@ class Number(Expression):
     return "{!r}".format(self.n)
 
 
+class SymbolConstant(Expression):
+  """A named constant, such as the Greek parameter epsilon."""
+  def __init__(self, name, latex_name=None):
+    self.name = name
+    self.latex_name = latex_name or name
+
+  def __repr__(self):
+    return self.name
+
+  def latex(self):
+    return self.latex_name
+
+
 class VariableSet(object):
   """
   A unique set of variables.
@@ -367,6 +380,82 @@ class Hypergeometric2F1(Expression):
   def latex(self):
     return r"{}_2F_1\left(%s,%s;%s;%s\right)" % (
       self.a.latex(), self.b.latex(), self.c.latex(), self.z.latex())
+
+
+class PiConstant(Expression):
+  """The mathematical constant pi."""
+  def __init__(self):
+    pass
+
+  def __repr__(self):
+    return "pi"
+
+  def latex(self):
+    return r"\pi"
+
+
+class Clausen2(Expression):
+  """The order-2 Clausen function Cl_2(theta)."""
+  def __init__(self, arg):
+    self.arg = arg
+
+  def simplified(self):
+    return Clausen2(self.arg.simplified())
+
+  def __repr__(self):
+    return "Cl2(%s)" % self.arg
+
+  def latex(self):
+    return r"\operatorname{Cl}_2\left(%s\right)" % self.arg.latex()
+
+
+class ErrorFunction(Expression):
+  """The real error function erf or imaginary error function erfi."""
+  NAMES = set(['erf', 'erfi'])
+
+  def __init__(self, name, arg):
+    if name not in self.NAMES:
+      raise ValueError("unknown error function '%s'" % name)
+    self.name = name
+    self.arg = arg
+
+  def simplified(self):
+    return ErrorFunction(self.name, self.arg.simplified())
+
+  def __repr__(self):
+    return "%s(%s)" % (self.name, self.arg)
+
+  def latex(self):
+    return r"\operatorname{%s}\left(%s\right)" % (
+      self.name, self.arg.latex())
+
+
+class ExponentialIntegral(Expression):
+  """The exponential integral Ei(arg)."""
+  def __init__(self, arg):
+    self.arg = arg
+
+  def simplified(self):
+    return ExponentialIntegral(self.arg.simplified())
+
+  def __repr__(self):
+    return "Ei(%s)" % self.arg
+
+  def latex(self):
+    return r"\operatorname{Ei}\left(%s\right)" % self.arg.latex()
+
+
+class SympyExpression(Expression):
+  """A general symbolic result supplied by SymPy's integration engine."""
+  def __init__(self, expression):
+    self.expression = expression
+
+  def __repr__(self):
+    return str(self.expression)
+
+  def latex(self):
+    import sympy
+    return sympy.latex(self.expression)
 
 
 class TrigFunction(Expression):
