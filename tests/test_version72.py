@@ -46,6 +46,17 @@ class TestVersion72Restoration(unittest.TestCase):
       result = self.solve(problem)
       self.assertNotIn('int[', repr(result), problem)
 
+  def test_log_one_plus_tangent_affine_rule(self):
+    for problem in ['int log( 1 + tan( x ) ) dx',
+      'int log( 1 + tan( 3*x+2 ) ) dx',
+      'int ln( 1 + tan( 2*x-1 ) ) dx']:
+      result = self.solve(problem)
+      self.assertNotIn('int[', repr(result), problem)
+      self.assertIn('Cl2(', repr(result), problem)
+      self.assertIn(r'\operatorname{Cl}_2', result.latex(), problem)
+    base_ten = self.solve('int log( 1 + tan( x ) ) dx')
+    self.assertIn('ln(10)', repr(base_ten))
+
 
 if __name__ == '__main__':
   unittest.main()

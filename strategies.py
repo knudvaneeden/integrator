@@ -2649,6 +2649,44 @@ class NestedQuadraticRadical(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class LogOnePlusTangent(IntegrationStrategy):
+  """Integrate log_b(1+tan(a*x+c)) using the Clausen function."""
+  description = "logarithm of one plus tangent with affine phase"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Logarithm) or not exp.arg.is_a(Sum): return None
+    tangent = None
+    for one, candidate in [(exp.arg.a, exp.arg.b), (exp.arg.b, exp.arg.a)]:
+      if one == Number(1) and candidate.is_a(TrigFunction) \
+        and candidate.name == 'tan':
+        tangent = candidate
+        break
+    if tangent == None: return None
+    slope = linear_coefficient(tangent.arg, intg.var)
+    if slope == None or slope == Number(0): return None
+    return exp, tangent.arg, slope
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    logarithm, phase, slope = self._parts(intg)
+    pi = SympyExpression(sympy.pi)
+    theta_one = Sum(Product(Fraction(Number(3), Number(2)), pi),
+      Product(Number(-2), phase))
+    theta_two = Sum(pi, Product(Number(-2), phase))
+    numerator = Sum(Product(phase, Logarithm(Number(2))),
+      Sum(Clausen2(theta_one), Product(Number(-1), Clausen2(theta_two))))
+    denominator = Product(Number(2), slope)
+    if logarithm.base != 'euler':
+      denominator = Product(denominator, Logarithm(logarithm.base))
+    primitive = Fraction(numerator, denominator).simplified()
+    return add_integration_constant(primitive, intg)
+
+
 class GeneralSymbolicIntegration(IntegrationStrategy):
   """General fallback for elementary and named-special-function antiderivatives."""
   description = "general symbolic integration with constants held fixed"
@@ -3291,4 +3329,5 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   SymbolicPowerTimesLogPower, SquareRootOneMinusCosine,
   ReciprocalQuadraticThreeHalves,
   NestedQuadraticRadical,
+  LogOnePlusTangent,
   GeneralSymbolicIntegration]

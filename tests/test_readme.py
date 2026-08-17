@@ -8,6 +8,7 @@ class TestReadmeExamples(unittest.TestCase):
   CANONICAL_VERSION_72_COUNT = 311
   ADDED_VERSION_73 = ['int sqrt( x - sqrt( x^2 - 1 ) ) dx']
   ADDED_VERSION_74 = ['int sqrt( 2 * x - sqrt( 4 * x^2 - 1 ) ) dx']
+  ADDED_VERSION_75 = ['int log( 1 + tan( x ) ) dx']
   ADDED_VERSION_58 = [
     'int sqrt( 5 * x + 4 ) dx',
     'int sin( x )^2 * cos( x ) dx',
@@ -74,9 +75,9 @@ class TestReadmeExamples(unittest.TestCase):
     examples = self._solved_examples()
     self.assertEqual(len(examples),
       self.CANONICAL_VERSION_72_COUNT + len(self.ADDED_VERSION_73)
-      + len(self.ADDED_VERSION_74))
+      + len(self.ADDED_VERSION_74) + len(self.ADDED_VERSION_75))
     self.assertEqual(examples[0], 'int ( 1 + 2 * x^2 ) * exp( x^2 ) dx')
-    added = self.ADDED_VERSION_73 + self.ADDED_VERSION_74
+    added = self.ADDED_VERSION_73 + self.ADDED_VERSION_74 + self.ADDED_VERSION_75
     self.assertEqual(examples[-len(added):], added)
 
 

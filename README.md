@@ -313,6 +313,7 @@ Solved:
     int x^n dx
     int sqrt( x - sqrt( x^2 - 1 ) ) dx
     int sqrt( 2 * x - sqrt( 4 * x^2 - 1 ) ) dx
+    int log( 1 + tan( x ) ) dx
 
 ===
 
