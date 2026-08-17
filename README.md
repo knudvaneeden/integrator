@@ -102,6 +102,9 @@ Solved:
     int x * ( 1 - sqrt( x ) )^2 dx
     int sqrt( x ) * exp( sqrt( x ) ) dx
     int 1 / ( 1 + x^3 ) dx
+    int 1 / cos( sqrt( x ) ) dx
+
+    int exp( x^2 ) dx
 
 ===
 

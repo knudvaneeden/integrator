@@ -23,7 +23,7 @@ def is_constant(expr, var) :
   """
   Test whether the expression is constant with respect to the variable.
   """
-  if expr.is_a(Number) :
+  if expr.is_a(Number) or expr.is_a(PiConstant):
     return True
   elif expr.is_a(Variable) :
     return (expr != var)
@@ -33,7 +33,8 @@ def is_constant(expr, var) :
     return is_constant(expr.numr, var) and is_constant(expr.denr, var)
   elif expr.is_a(Power):
     return is_constant(expr.base, var) and is_constant(expr.exponent, var)
-  elif expr.is_a(Logarithm) or expr.is_a(TrigFunction):
+  elif (expr.is_a(Logarithm) or expr.is_a(TrigFunction)
+      or expr.is_a(Clausen2) or expr.is_a(ErrorFunction)):
     return is_constant(expr.arg, var)
   else :
     return False
@@ -689,6 +690,95 @@ class RationalPowerTimesExponentialPowerSubstitution(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class RationalPowerSecantSubstitution(IntegrationStrategy):
+  """Integrate c*x^p*sec(a*x^r+b) for transformed powers zero and one."""
+  description = ("substitute a rational power in a secant integral, using "
+    "the Clausen function for the first moment")
+
+  @classmethod
+  def _affine_power_argument(self, expr, var):
+    constant = Rational(0)
+    monomial = None
+    if expr.is_a(Sum):
+      first_value = _rational_value(expr.a)
+      second_value = _rational_value(expr.b)
+      if first_value != None:
+        constant = first_value
+        monomial = _rational_power_monomial(expr.b, var)
+      elif second_value != None:
+        constant = second_value
+        monomial = _rational_power_monomial(expr.a, var)
+    else:
+      monomial = _rational_power_monomial(expr, var)
+    if monomial == None or monomial[0] == 0 or monomial[1] == 0:
+      return None
+    return monomial[0], monomial[1], constant
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    multiplier = None
+    phase = None
+    if (exp.is_a(Fraction) and exp.denr.is_a(TrigFunction)
+        and exp.denr.name == 'cos'):
+      multiplier, phase = exp.numr, exp.denr.arg
+    else:
+      factors = []
+
+      def collect(expr):
+        if expr.is_a(Product):
+          collect(expr.a)
+          collect(expr.b)
+        else:
+          factors.append(expr)
+
+      collect(exp)
+      secants = [factor for factor in factors
+        if factor.is_a(TrigFunction) and factor.name == 'sec']
+      if len(secants) != 1: return None
+      secant = secants[0]
+      phase = secant.arg
+      multiplier = Number(1)
+      removed = False
+      for factor in factors:
+        if factor is secant and not removed:
+          removed = True
+        else:
+          multiplier = Product(multiplier, factor).simplified()
+
+    monomial = _rational_power_monomial(multiplier, intg.var)
+    argument = self._affine_power_argument(phase, intg.var)
+    if monomial == None or argument == None: return None
+    coefficient, p = monomial
+    a, r, b = argument
+    transformed_degree = (p + 1) / r - 1
+    if transformed_degree not in [Rational(0), Rational(1)]: return None
+    return coefficient, phase, a, r, b, int(transformed_degree)
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, phase, a, r, b, degree = self._parts(intg)
+    secant = TrigFunction('sec', phase)
+    tangent = TrigFunction('tan', phase)
+    logarithm = Logarithm(Sum(secant, tangent))
+    if degree == 0:
+      primitive = _scale_by_rational(logarithm, coefficient / (r * a))
+    else:
+      half_pi = Fraction(PiConstant(), Number(2))
+      positive = Clausen2(Sum(half_pi, phase))
+      negative = Clausen2(Sum(half_pi, Product(Number(-1), phase)))
+      x_power = (intg.var if r == 1 else
+        Power(intg.var, _rational_expression(r)))
+      first = Product(_scale_by_rational(x_power, a), logarithm)
+      moment = Sum(Sum(first, positive), negative)
+      primitive = _scale_by_rational(moment, coefficient / (r * a * a))
+    return add_integration_constant(primitive, intg)
+
+
 class ExponentialRationalSubstitution(IntegrationStrategy):
   """Solve exp(6x)/(exp(4x)+1) with u=exp(2x)."""
   description = "substitution u=exp(2x) followed by rational division"
@@ -929,6 +1019,43 @@ def _rational_square_root_expression(value):
     and denominator_root * denominator_root == value.denominator):
     return _rational_expression(Rational(numerator_root, denominator_root))
   return Power(_rational_expression(value), Fraction(Number(1), Number(2)))
+
+
+class QuadraticExponentialErrorFunction(IntegrationStrategy):
+  """Integrate exp(a*x^2+b*x+c) for rational a, b and c."""
+  description = "exponential of a quadratic by completing the square"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(TrigFunction) or exp.name != 'exp': return None
+    coefficients = _laurent_polynomial_coefficients(exp.arg, intg.var)
+    if coefficients == None: return None
+    if any(degree < 0 or degree > 2 for degree in coefficients): return None
+    a = coefficients.get(2, Rational(0))
+    if a == 0: return None
+    return (a, coefficients.get(1, Rational(0)),
+      coefficients.get(0, Rational(0)))
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    a, b, c = self._parts(intg)
+    h = b / (Rational(2) * a)
+    k = c - b * b / (Rational(4) * a)
+    shifted = intg.var if h == 0 else Sum(intg.var, _rational_expression(h))
+    root = _rational_square_root_expression(abs(a))
+    argument = shifted if root == Number(1) else Product(root, shifted)
+    error = ErrorFunction('erfi' if a > 0 else 'erf', argument)
+    sqrt_pi = Power(PiConstant(), Fraction(Number(1), Number(2)))
+    numerator = (sqrt_pi if k == 0 else
+      Product(TrigFunction('exp', _rational_expression(k)), sqrt_pi))
+    denominator = Number(2) if root == Number(1) else Product(Number(2), root)
+    primitive = Product(Fraction(numerator, denominator), error)
+    return add_integration_constant(primitive, intg)
 
 
 class LinearOverQuadraticSquareRoot(IntegrationStrategy):
@@ -2463,6 +2590,8 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, PolynomialSineCosineProduct,
   RationalPowerTimesExponentialPowerSubstitution,
+  RationalPowerSecantSubstitution,
+  QuadraticExponentialErrorFunction,
   ExponentialFunction, ConstantBaseExponential,
   PolynomialDerivativeExponentialSubstitution,
   TrigBinomialPowerSubstitution, OddSineCosinePowerSubstitution,

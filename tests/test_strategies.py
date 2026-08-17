@@ -189,6 +189,7 @@ class TestStrategies(unittest.TestCase):
     problem = 'int ( 6 * x^2 + 2 ) * exp( 2 * x^3 + 2 * x + 1 ) dx'
     result = attempt_integral(parse(problem), SubLogger('test'))
     self.assertEqual('int[' in repr(result), False)
+    self.assertEqual('exp(' in repr(result), True)
 
   def test_RationalPowerTimesExponentialPowerSubstitution(self):
     from parseintg import parse
@@ -206,7 +207,26 @@ class TestStrategies(unittest.TestCase):
     for problem in general_cases:
       result = attempt_integral(parse(problem), SubLogger('test'))
       self.assertEqual('int[' in repr(result), False, problem)
-    self.assertEqual('exp(' in repr(result), True)
+
+  def test_RationalPowerSecantSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = 'int 1 / cos( sqrt( x ) ) dx'
+    result = attempt_integral(parse(requested), SubLogger('test'))
+    rendered = repr(result)
+    self.assertEqual('int[' in rendered, False)
+    self.assertEqual(rendered.count('Cl2('), 2)
+    self.assertEqual('ln((sec((x ^ (1 / 2))) + tan((x ^ (1 / 2)))))'
+      in rendered, True)
+
+    general_cases = [
+      'int x^(-1/2) * sec( 3 * sqrt( x ) + 2 ) dx',
+      'int x^2 * sec( 4 * x^3 - 1 ) dx',
+      'int x^3 * sec( 2 * x^2 + 5 ) dx']
+    for problem in general_cases:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
 
   def test_TrigBinomialPowerSubstitutionOriginal(self):
     from parseintg import parse
@@ -864,6 +884,23 @@ class TestStrategies(unittest.TestCase):
       'int 1 / sqrt( x^2 + m^2 + x ) dx'), SubLogger('test'))
     self.assertEqual('int[' in repr(result), False)
     self.assertEqual('ln(' in repr(result), True)
+
+  def test_QuadraticExponentialErrorFunction(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = attempt_integral(parse('int exp( x^2 ) dx'), SubLogger('test'))
+    positive = attempt_integral(parse(
+      'int exp( 3*x^2 + 2*x + 5 ) dx'), SubLogger('test'))
+    negative = attempt_integral(parse(
+      'int exp( -2*x^2 + 4*x + 1 ) dx'), SubLogger('test'))
+    self.assertEqual(repr(requested),
+      '((((pi ^ (1 / 2)) / 2) * erfi(x)) + C)')
+    self.assertEqual('erfi(' in repr(positive), True)
+    self.assertEqual('erf(' in repr(negative), True)
+    self.assertEqual('int[' in repr(positive), False)
+    self.assertEqual('int[' in repr(negative), False)
+    self.assertEqual(r'\operatorname{erfi}' in requested.latex(), True)
 
   def test_AndOrGraph(self):
     from parseintg import parse
