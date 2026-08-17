@@ -1,3 +1,8 @@
+<img width="970" height="1032" alt="image" src="https://github.com/user-attachments/assets/2734a043-e15c-46a4-886d-2868cb63d059" />
+
+<img width="970" height="1032" alt="image" src="https://github.com/user-attachments/assets/4f73e062-63c2-43ac-a4ec-fcb1a2dcbf9d" />
+
+
 Solved:
 
     int x dx
