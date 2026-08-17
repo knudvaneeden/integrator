@@ -189,6 +189,23 @@ class TestStrategies(unittest.TestCase):
     problem = 'int ( 6 * x^2 + 2 ) * exp( 2 * x^3 + 2 * x + 1 ) dx'
     result = attempt_integral(parse(problem), SubLogger('test'))
     self.assertEqual('int[' in repr(result), False)
+
+  def test_RationalPowerTimesExponentialPowerSubstitution(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = 'int sqrt( x ) * exp( sqrt( x ) ) dx'
+    result = attempt_integral(parse(requested), SubLogger('test'))
+    self.assertEqual(repr(result),
+      '((2 * (exp((x ^ (1 / 2))) * ((x + (-2 * (x ^ (1 / 2)))) + 2))) + C)')
+
+    general_cases = [
+      'int x^(5/2) * exp( 3 * sqrt( x ) + 2 ) dx',
+      'int x^(-1/3) * exp( 2 * x^(1/3) ) dx',
+      'int 4 * x^3 * exp( 2 * x^2 - 1 ) dx']
+    for problem in general_cases:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
     self.assertEqual('exp(' in repr(result), True)
 
   def test_TrigBinomialPowerSubstitutionOriginal(self):
@@ -511,6 +528,24 @@ class TestStrategies(unittest.TestCase):
     rendered = repr(result)
     self.assertEqual('ln(x)' in rendered, True)
     self.assertEqual('ln((1 + (x ^ 2)))' in rendered, True)
+
+  def test_MonomialOverPowerBinomialHypergeometric(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = 'int 1 / ( 1 + x^3 ) dx'
+    result = attempt_integral(parse(requested), SubLogger('test'))
+    self.assertEqual(repr(result),
+      '((x * hypergeometric2F1(1, (1 / 3), (4 / 3), '
+      '(-1 * (x ^ 3)))) + C)')
+
+    general_cases = [
+      'int 3 * x^2 / ( 2 + 5 * x^4 ) dx',
+      'int x^(-1) / ( 1 + x^3 ) dx',
+      'int 7 * x^(2/3) / ( 4 - 3 * x^(5/2) ) dx']
+    for problem in general_cases:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
 
   def test_QuadraticDerivativePowerSubstitutionSquareRoot(self):
     from parseintg import parse

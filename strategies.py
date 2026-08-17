@@ -10,7 +10,7 @@ and can apply itself to an expression.
 
 from elements import *
 from fractions import Fraction as Rational
-from math import comb, isqrt
+from math import comb, factorial, isqrt
 
 # add on integration uncertainty variable
 def add_integration_constant(expr, original_intg):
@@ -600,6 +600,92 @@ class PolynomialTimesRationalPowerBinomialExpansion(IntegrationStrategy):
       terms.append(term)
     primitive = terms[0] if terms else Number(0)
     for term in terms[1:]: primitive = Sum(primitive, term)
+    return add_integration_constant(primitive, intg)
+
+
+class RationalPowerTimesExponentialPowerSubstitution(IntegrationStrategy):
+  """Integrate c*x^p*exp(a*x^r+b) when (p+1)/r is a positive integer."""
+  description = ("substitute u=x^r and integrate the resulting integer "
+    "power times an exponential")
+
+  @classmethod
+  def _affine_power_argument(self, expr, var):
+    constant = Rational(0)
+    monomial = None
+    if expr.is_a(Sum):
+      first_value = _rational_value(expr.a)
+      second_value = _rational_value(expr.b)
+      if first_value != None:
+        constant = first_value
+        monomial = _rational_power_monomial(expr.b, var)
+      elif second_value != None:
+        constant = second_value
+        monomial = _rational_power_monomial(expr.a, var)
+    else:
+      monomial = _rational_power_monomial(expr, var)
+    if monomial == None or monomial[0] == 0 or monomial[1] == 0:
+      return None
+    return monomial[0], monomial[1], constant
+
+  @classmethod
+  def _parts(self, intg):
+    factors = []
+
+    def collect(expr):
+      if expr.is_a(Product):
+        collect(expr.a)
+        collect(expr.b)
+      else:
+        factors.append(expr)
+
+    collect(intg.simplified().exp)
+    exponentials = [factor for factor in factors
+      if factor.is_a(TrigFunction) and factor.name == 'exp']
+    if len(exponentials) != 1: return None
+    exponential = exponentials[0]
+    multiplier = Number(1)
+    removed = False
+    for factor in factors:
+      if factor is exponential and not removed:
+        removed = True
+      else:
+        multiplier = Product(multiplier, factor).simplified()
+    monomial = _rational_power_monomial(multiplier, intg.var)
+    argument = self._affine_power_argument(exponential.arg, intg.var)
+    if monomial == None or argument == None: return None
+    coefficient, p = monomial
+    exponential_coefficient, r, unused_constant = argument
+    transformed_power = (p + 1) / r
+    if transformed_power.denominator != 1 or transformed_power <= 0:
+      return None
+    return (coefficient, exponential, exponential_coefficient, r,
+      int(transformed_power) - 1)
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, exponential, a, r, degree = self._parts(intg)
+    terms = []
+    for j in range(degree + 1):
+      term_degree = degree - j
+      term_coefficient = (Rational((-1) ** j * factorial(degree),
+        factorial(term_degree)) / (a ** (j + 1)))
+      x_exponent = r * term_degree
+      if x_exponent == 0:
+        power = Number(1)
+      elif x_exponent == 1:
+        power = intg.var
+      else:
+        power = Power(intg.var, _rational_expression(x_exponent))
+      terms.append(_scale_by_rational(power, term_coefficient))
+    polynomial = terms[0]
+    for term in terms[1:]: polynomial = Sum(polynomial, term)
+    product = (exponential if polynomial == Number(1) else
+      Product(exponential, polynomial))
+    primitive = _scale_by_rational(product, coefficient / r)
     return add_integration_constant(primitive, intg)
 
 
@@ -2074,6 +2160,56 @@ class LaurentPolynomialOverOnePlusSquare(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class MonomialOverPowerBinomialHypergeometric(IntegrationStrategy):
+  """Integrate c*x^p/(d+e*x^q) for rational parameters."""
+  description = ("general monomial-over-power-binomial integral using "
+    "the Gauss hypergeometric function")
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Fraction) or not exp.denr.is_a(Sum): return None
+    numerator = _rational_power_monomial(exp.numr, intg.var)
+    first = _rational_power_monomial(exp.denr.a, intg.var)
+    second = _rational_power_monomial(exp.denr.b, intg.var)
+    if numerator == None or first == None or second == None: return None
+    if first[1] == 0 and second[1] != 0:
+      constant, power_term = first, second
+    elif second[1] == 0 and first[1] != 0:
+      constant, power_term = second, first
+    else:
+      return None
+    if constant[0] == 0 or power_term[0] == 0: return None
+    return (numerator[0], numerator[1], constant[0], power_term[0],
+      power_term[1], exp.denr)
+
+  @classmethod
+  def applicable(self, intg):
+    return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficient, p, d, e, q, denominator = self._parts(intg)
+    if p == -1:
+      first = _scale_by_rational(Logarithm(intg.var), coefficient / d)
+      second = _scale_by_rational(Logarithm(denominator),
+        -coefficient / (d * q))
+      primitive = Sum(first, second)
+    else:
+      exponent = p + 1
+      alpha = exponent / q
+      x_power = (intg.var if exponent == 1 else
+        Power(intg.var, _rational_expression(exponent)))
+      q_power = (intg.var if q == 1 else
+        Power(intg.var, _rational_expression(q)))
+      argument = _scale_by_rational(q_power, -e / d)
+      hypergeometric = Hypergeometric2F1(Number(1),
+        _rational_expression(alpha), _rational_expression(alpha + 1), argument)
+      primitive = _scale_by_rational(Product(x_power, hypergeometric),
+        coefficient / (d * exponent))
+    return add_integration_constant(primitive, intg)
+
+
 def _one_plus_x_squared(expr, var):
   return (expr.is_a(Sum) and expr.a == Number(1)
     and _is_x_squared(expr.b, var))
@@ -2326,6 +2462,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ConstantPower, SineCosineLinearCombination, DistributeAddition,
   OneOverX, SimpleTrig, TrigSquare,
   TrigProduct, PolynomialSineCosineProduct,
+  RationalPowerTimesExponentialPowerSubstitution,
   ExponentialFunction, ConstantBaseExponential,
   PolynomialDerivativeExponentialSubstitution,
   TrigBinomialPowerSubstitution, OddSineCosinePowerSubstitution,
@@ -2348,5 +2485,6 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ExponentialBinomialPowerSubstitution,
   ExponentialQuadraticDenominatorSubstitution,
   LaurentPolynomialOverOnePlusSquare,
+  MonomialOverPowerBinomialHypergeometric,
   ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples]

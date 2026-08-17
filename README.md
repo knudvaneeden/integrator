@@ -1,8 +1,3 @@
-<img width="970" height="1032" alt="image" src="https://github.com/user-attachments/assets/2734a043-e15c-46a4-886d-2868cb63d059" />
-
-<img width="970" height="1032" alt="image" src="https://github.com/user-attachments/assets/4f73e062-63c2-43ac-a4ec-fcb1a2dcbf9d" />
-
-
 Solved:
 
     int x dx
@@ -105,6 +100,8 @@ Solved:
     int 1 / sqrt( 1 + x ) dx
     int x / sqrt( x^2 - 15 ) dx
     int x * ( 1 - sqrt( x ) )^2 dx
+    int sqrt( x ) * exp( sqrt( x ) ) dx
+    int 1 / ( 1 + x^3 ) dx
 
 ===
 

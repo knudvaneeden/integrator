@@ -23,6 +23,12 @@ class TestReadmeExamples(unittest.TestCase):
     'int x / sqrt( x^2 - 15 ) dx',
     'int x * ( 1 - sqrt( x ) )^2 dx']
 
+  ADDED_VERSION_59 = [
+    'int sqrt( x ) * exp( sqrt( x ) ) dx']
+
+  ADDED_VERSION_60 = [
+    'int 1 / ( 1 + x^3 ) dx']
+
   def _solved_examples(self):
     readme = Path(__file__).resolve().parents[1] / 'README.md'
     lines = readme.read_text().splitlines()
@@ -46,8 +52,9 @@ class TestReadmeExamples(unittest.TestCase):
 
   def test_new_examples_are_the_final_readme_entries(self):
     examples = self._solved_examples()
-    self.assertEqual(examples[-len(self.ADDED_VERSION_58):],
-      self.ADDED_VERSION_58)
+    added = (self.ADDED_VERSION_58 + self.ADDED_VERSION_59
+      + self.ADDED_VERSION_60)
+    self.assertEqual(examples[-len(added):], added)
 
 
 if __name__ == '__main__':
