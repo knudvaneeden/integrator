@@ -26,7 +26,6 @@ FUNCTION_NAMES = ['arcsin', 'arccos', 'arctan', 'arccot', 'arcsec',
   'arccsc', 'sqrt', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc',
   'exp', 'log', 'ln',
   'sin', 'cos', 'tan', 'sec', 'csc', 'cot']
-CONSTANT_NAMES = {'epsilon': r'\epsilon'}
 
 
 class ParseError(Exception): pass
@@ -53,16 +52,6 @@ def tokenize(s):
         tokens.append('*')
       tokens.append(function_name)
       character_stream = character_stream[len(function_name):]
-      continue
-
-    constant_name = next((name for name in CONSTANT_NAMES
-      if character_stream[0:len(name)] == list(name)), None)
-    if constant_name != None:
-      if (tokens[-1] in VariableSet.SYMBOLS or _isnum(tokens[-1])
-          or tokens[-1] in PARENS_RIGHT or tokens[-1] in CONSTANT_NAMES):
-        tokens.append('*')
-      tokens.append(constant_name)
-      character_stream = character_stream[len(constant_name):]
       continue
 
     # recue integrals starts
@@ -132,7 +121,7 @@ def parse_tokens(tokens, vset=None, debug=False):
   normalized_tokens = []
   for token in tokens:
     if (token == '-' and (len(normalized_tokens) == 0
-        or normalized_tokens[-1] in BIN_OPS + PARENS_LEFT + [INTG_START])):
+        or normalized_tokens[-1] in BIN_OPS + PARENS_LEFT)):
       normalized_tokens.extend([Number(-1), '*'])
     else:
       normalized_tokens.append(token)
@@ -256,9 +245,6 @@ def parse_tokens(tokens, vset=None, debug=False):
     else:
       return token
   tokens = [variables(t) for t in tokens]
-
-  tokens = [SymbolConstant(t, CONSTANT_NAMES[t])
-    if isinstance(t, str) and t in CONSTANT_NAMES else t for t in tokens]
 
   # numbers
   if debug: print("    parsing numbers")

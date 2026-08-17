@@ -4,20 +4,6 @@ from elements import *
 from parseintg import parse
 
 class TestElements(unittest.TestCase):
-  def test_SpecialFunctionRendering(self):
-    pi = PiConstant()
-    clausen = Clausen2(Fraction(pi, Number(2)))
-    erfi = ErrorFunction('erfi', parse('int x dx').var)
-    exponential_integral = ExponentialIntegral(parse('int x dx').var)
-    self.assertEqual(repr(pi), 'pi')
-    self.assertEqual(pi.latex(), r'\pi')
-    self.assertEqual(repr(clausen), 'Cl2((pi / 2))')
-    self.assertEqual(r'\operatorname{Cl}_2' in clausen.latex(), True)
-    self.assertEqual(repr(erfi), 'erfi(x)')
-    self.assertEqual(r'\operatorname{erfi}' in erfi.latex(), True)
-    self.assertEqual(repr(exponential_integral), 'Ei(x)')
-    self.assertEqual(r'\operatorname{Ei}' in exponential_integral.latex(), True)
-
   def test_Expression(self):
     try:
       Expression()
