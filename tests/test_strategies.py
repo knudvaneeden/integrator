@@ -902,6 +902,45 @@ class TestStrategies(unittest.TestCase):
     self.assertEqual('int[' in repr(negative), False)
     self.assertEqual(r'\operatorname{erfi}' in requested.latex(), True)
 
+  def test_ExponentialOverAffineExponentialIntegral(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    requested = attempt_integral(parse(
+      'int exp( x ) / x dx'), SubLogger('test'))
+    general = attempt_integral(parse(
+      'int 2 * exp( 3*x + 1 ) / ( 4*x + 5 ) dx'), SubLogger('test'))
+    self.assertEqual(repr(requested), '(Ei(x) + C)')
+    self.assertEqual('Ei(' in repr(general), True)
+    self.assertEqual('int[' in repr(general), False)
+    self.assertEqual(r'\operatorname{Ei}' in requested.latex(), True)
+
+  def test_GeneralSpecialFunctionFamilies(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    problems = [
+      'int sin( exp( x ) ) dx',
+      'int exp( exp( x ) ) dx',
+      'int x^2 * sin( x^4 ) dx',
+      'int sin( x )^m * cos( x )^n dx',
+      'int 1 / sqrt( A + B * sin( x ) ) dx',
+      'int sqrt( x^2 + 2*x + 5 ) / x dx',
+      'int 1 / ( x * sqrt( 2*H*x^2 - a^2 - 2*K*x^4 ) ) dx',
+      'int log( x ) / ( log( x ) + 1 )^2 dx']
+    for problem in problems:
+      result = attempt_integral(parse(problem), SubLogger('test'))
+      self.assertEqual('int[' in repr(result), False, problem)
+      self.assertEqual(len(result.latex()) > 0, True, problem)
+
+  def test_NoFalseClosedFormForLogSquaredDenominator(self):
+    from parseintg import parse
+    from solver import attempt_integral
+    from sublogger import SubLogger
+    result = attempt_integral(parse(
+      'int 1 / ( x + log( x )^2 ) dx'), SubLogger('test'))
+    self.assertEqual('int[' in repr(result), True)
+
   def test_AndOrGraph(self):
     from parseintg import parse
     from solver import attempt_integral, AndOrGraph

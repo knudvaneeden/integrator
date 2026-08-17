@@ -11,6 +11,7 @@ and can apply itself to an expression.
 from elements import *
 from fractions import Fraction as Rational
 from math import comb, factorial, isqrt
+import sympy
 
 # add on integration uncertainty variable
 def add_integration_constant(expr, original_intg):
@@ -23,7 +24,7 @@ def is_constant(expr, var) :
   """
   Test whether the expression is constant with respect to the variable.
   """
-  if expr.is_a(Number) or expr.is_a(PiConstant):
+  if expr.is_a(Number) or expr.is_a(PiConstant) or expr.is_a(SymbolConstant):
     return True
   elif expr.is_a(Variable) :
     return (expr != var)
@@ -34,7 +35,8 @@ def is_constant(expr, var) :
   elif expr.is_a(Power):
     return is_constant(expr.base, var) and is_constant(expr.exponent, var)
   elif (expr.is_a(Logarithm) or expr.is_a(TrigFunction)
-      or expr.is_a(Clausen2) or expr.is_a(ErrorFunction)):
+      or expr.is_a(Clausen2) or expr.is_a(ErrorFunction)
+      or expr.is_a(ExponentialIntegral)):
     return is_constant(expr.arg, var)
   else :
     return False
@@ -1125,8 +1127,9 @@ class LinearOverQuadraticSquareRoot(IntegrationStrategy):
 def _symbolic_polynomial_coefficients(expr, var):
   """Small symbolic-coefficient polynomial extractor used for quadratic roots."""
   if expr == var: return {1: Number(1)}
-  if expr.is_a(Power) and expr.base == var and expr.exponent == Number(2):
-    return {2: Number(1)}
+  if (expr.is_a(Power) and expr.base == var and expr.exponent.is_a(Number)
+      and isinstance(expr.exponent.n, int) and expr.exponent.n >= 0):
+    return {expr.exponent.n: Number(1)}
   if is_constant(expr, var): return {0: expr}
   if expr.is_a(Sum):
     a = _symbolic_polynomial_coefficients(expr.a, var)
@@ -2043,6 +2046,299 @@ class ExponentialOverLinearQuotientDerivative(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class ExponentialOverAffineExponentialIntegral(IntegrationStrategy):
+  """Integrate q*exp(a*x+b)/(m*x+n) using the exponential integral."""
+  description = "exponential of an affine function over an affine function"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Fraction): return None
+    numerator = _polynomial_times_exponential(exp.numr, intg.var)
+    linear = _laurent_polynomial_coefficients(exp.denr, intg.var)
+    if numerator == None or linear == None: return None
+    polynomial, exponential = numerator
+    if any(degree != 0 for degree in polynomial): return None
+    q = polynomial.get(0, Rational(0))
+    phase = _laurent_polynomial_coefficients(exponential.arg, intg.var)
+    if phase == None: return None
+    if any(degree < 0 or degree > 1 for degree in phase): return None
+    if any(degree < 0 or degree > 1 for degree in linear): return None
+    a = phase.get(1, Rational(0))
+    m = linear.get(1, Rational(0))
+    if q == 0 or a == 0 or m == 0: return None
+    return (q, a, phase.get(0, Rational(0)), m,
+      linear.get(0, Rational(0)), exp.denr)
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    q, a, b, m, n, linear = self._parts(intg)
+    argument = _scale_by_rational(linear, a / m)
+    primitive = ExponentialIntegral(argument)
+    constant_exponent = b - a * n / m
+    if constant_exponent != 0:
+      primitive = Product(
+        TrigFunction('exp', _rational_expression(constant_exponent)), primitive)
+    primitive = _scale_by_rational(primitive, q / m)
+    return add_integration_constant(primitive, intg)
+
+
+def _to_sympy(expr, symbols):
+  """Translate the native expression tree to SymPy without changing variables."""
+  if expr.is_a(Number): return sympy.Integer(expr.n)
+  if expr.is_a(SymbolConstant):
+    if expr.name not in symbols: symbols[expr.name] = sympy.Symbol(expr.name)
+    return symbols[expr.name]
+  if expr.is_a(Variable):
+    name = repr(expr)
+    if name not in symbols: symbols[name] = sympy.Symbol(name)
+    return symbols[name]
+  if expr.is_a(Sum): return _to_sympy(expr.a, symbols) + _to_sympy(expr.b, symbols)
+  if expr.is_a(Product): return _to_sympy(expr.a, symbols) * _to_sympy(expr.b, symbols)
+  if expr.is_a(Fraction): return _to_sympy(expr.numr, symbols) / _to_sympy(expr.denr, symbols)
+  if expr.is_a(Power): return _to_sympy(expr.base, symbols) ** _to_sympy(expr.exponent, symbols)
+  if expr.is_a(Logarithm):
+    argument = _to_sympy(expr.arg, symbols)
+    return sympy.log(argument) if expr.base == 'euler' else sympy.log(argument, 10)
+  if expr.is_a(TrigFunction):
+    argument = _to_sympy(expr.arg, symbols)
+    functions = {
+      'sin': sympy.sin, 'cos': sympy.cos, 'tan': sympy.tan,
+      'sec': sympy.sec, 'csc': sympy.csc, 'cot': sympy.cot,
+      'asin': sympy.asin, 'arcsin': sympy.asin,
+      'acos': sympy.acos, 'arccos': sympy.acos,
+      'atan': sympy.atan, 'arctan': sympy.atan,
+      'acot': sympy.acot, 'arccot': sympy.acot,
+      'asec': sympy.asec, 'arcsec': sympy.asec,
+      'acsc': sympy.acsc, 'arccsc': sympy.acsc,
+      'exp': sympy.exp}
+    return functions[expr.name](argument)
+  raise ValueError("cannot translate expression to SymPy: %r" % expr)
+
+
+def _sympy_quadratic_reciprocal_primitive(constant, linear, quadratic, var):
+  """Formal primitive of 1/sqrt(constant+linear*var+quadratic*var^2)."""
+  root = sympy.sqrt(constant + linear * var + quadratic * var ** 2)
+  return sympy.log(2 * sympy.sqrt(quadratic) * root
+    + 2 * quadratic * var + linear) / sympy.sqrt(quadratic)
+
+
+class GeneralSineCosinePowers(IntegrationStrategy):
+  """Integrate sin(u)^m*cos(u)^n with constant exponents via incomplete beta."""
+  description = "general sine-cosine powers using the incomplete beta function"
+
+  @classmethod
+  def _factor(self, expr):
+    if expr.is_a(TrigFunction) and expr.name in ['sin', 'cos']:
+      return expr.name, expr.arg, Number(1)
+    if (expr.is_a(Power) and expr.base.is_a(TrigFunction)
+        and expr.base.name in ['sin', 'cos']):
+      return expr.base.name, expr.base.arg, expr.exponent
+    return None
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    factors = [self._factor(exp)]
+    if exp.is_a(Product): factors = [self._factor(exp.a), self._factor(exp.b)]
+    if any(factor == None for factor in factors): return None
+    phase = factors[0][1]
+    if any(factor[1] != phase for factor in factors): return None
+    sine_power, cosine_power = Number(0), Number(0)
+    for name, argument, exponent in factors:
+      if not is_constant(exponent, intg.var): return None
+      if name == 'sin': sine_power = exponent
+      else: cosine_power = exponent
+    slope = linear_coefficient(phase, intg.var)
+    if slope == None or slope == Number(0): return None
+    return phase, sine_power, cosine_power, slope
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    phase, m, n, slope = self._parts(intg)
+    symbols = {}
+    u = _to_sympy(phase, symbols)
+    alpha = (_to_sympy(m, symbols) + 1) / 2
+    beta = (_to_sympy(n, symbols) + 1) / 2
+    result = sympy.betainc(alpha, beta, 0, sympy.sin(u) ** 2)
+    result /= 2 * _to_sympy(slope, symbols)
+    return add_integration_constant(SympyExpression(result), intg)
+
+
+class ReciprocalSqrtConstantPlusSine(IntegrationStrategy):
+  """Integrate 1/sqrt(A+B*sin(a*x+b)) using the elliptic integral F."""
+  description = "reciprocal square root of an affine sine using elliptic F"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or exp.numr != Number(1)
+        or not exp.denr.is_a(Power)
+        or exp.denr.exponent != Fraction(Number(1), Number(2))): return None
+    base = exp.denr.base
+    if not base.is_a(Sum): return None
+    for constant, trig_term in [(base.a, base.b), (base.b, base.a)]:
+      coefficient, sine = Number(1), trig_term
+      if trig_term.is_a(Product):
+        if is_constant(trig_term.a, intg.var): coefficient, sine = trig_term.a, trig_term.b
+        elif is_constant(trig_term.b, intg.var): coefficient, sine = trig_term.b, trig_term.a
+      if (is_constant(constant, intg.var) and is_constant(coefficient, intg.var)
+          and sine.is_a(TrigFunction) and sine.name == 'sin'):
+        slope = linear_coefficient(sine.arg, intg.var)
+        if slope != None and slope != Number(0):
+          return constant, coefficient, sine.arg, slope
+    return None
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    constant, coefficient, phase, slope = self._parts(intg)
+    symbols = {}
+    A, B = _to_sympy(constant, symbols), _to_sympy(coefficient, symbols)
+    u, a = _to_sympy(phase, symbols), _to_sympy(slope, symbols)
+    result = 2 * sympy.elliptic_f(u / 2 - sympy.pi / 4,
+      2 * B / (A + B)) / (a * sympy.sqrt(A + B))
+    return add_integration_constant(SympyExpression(result), intg)
+
+
+class ReciprocalXEvenQuarticSquareRoot(IntegrationStrategy):
+  """Integrate 1/(x*sqrt(A*x^4+B*x^2+C)) by u=1/x^2."""
+  description = "reciprocal x times an even-quartic square root"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Fraction) or exp.numr != Number(1): return None
+    denr = exp.denr
+    root = None
+    if denr.is_a(Product):
+      if denr.a == intg.var and denr.b.is_a(Power): root = denr.b
+      elif denr.b == intg.var and denr.a.is_a(Power): root = denr.a
+    if root == None or root.exponent != Fraction(Number(1), Number(2)): return None
+    coefficients = _symbolic_polynomial_coefficients(root.base, intg.var)
+    if coefficients == None or any(d not in [0, 2, 4] for d in coefficients): return None
+    if coefficients.get(0, Number(0)) == Number(0): return None
+    return coefficients
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    coefficients = self._parts(intg)
+    symbols = {}
+    A = _to_sympy(coefficients.get(4, Number(0)), symbols)
+    B = _to_sympy(coefficients.get(2, Number(0)), symbols)
+    C = _to_sympy(coefficients.get(0, Number(0)), symbols)
+    x = _to_sympy(intg.var, symbols)
+    result = -_sympy_quadratic_reciprocal_primitive(A, B, C, x ** -2) / 2
+    return add_integration_constant(SympyExpression(result), intg)
+
+
+class QuadraticSquareRootOverX(IntegrationStrategy):
+  """Integrate sqrt(a*x^2+b*x+c)/x for constant coefficients."""
+  description = "general quadratic square root divided by x"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or exp.denr != intg.var
+        or not exp.numr.is_a(Power)
+        or exp.numr.exponent != Fraction(Number(1), Number(2))): return None
+    coefficients = _symbolic_polynomial_coefficients(exp.numr.base, intg.var)
+    if coefficients == None or any(d < 0 or d > 2 for d in coefficients): return None
+    if coefficients.get(2, Number(0)) == Number(0): return None
+    return exp.numr.base, coefficients
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    quadratic, coefficients = self._parts(intg)
+    symbols = {}
+    a = _to_sympy(coefficients.get(2, Number(0)), symbols)
+    b = _to_sympy(coefficients.get(1, Number(0)), symbols)
+    c = _to_sympy(coefficients.get(0, Number(0)), symbols)
+    x = _to_sympy(intg.var, symbols)
+    root = _to_sympy(Power(quadratic, Fraction(Number(1), Number(2))), symbols)
+    first = _sympy_quadratic_reciprocal_primitive(a, b, c, 1 / x)
+    second = _sympy_quadratic_reciprocal_primitive(c, b, a, x)
+    result = root - c * first + b * second / 2
+    return add_integration_constant(SympyExpression(result), intg)
+
+
+class LogarithmOverShiftedLogSquare(IntegrationStrategy):
+  """Integrate log_b(x)/(log_b(x)+c)^2 for constant b and c."""
+  description = "logarithm divided by a squared shifted logarithm"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or not exp.numr.is_a(Logarithm)
+        or exp.numr.arg != intg.var or not exp.denr.is_a(Power)
+        or exp.denr.exponent != Number(2)
+        or not exp.denr.base.is_a(Sum)): return None
+    logarithm = exp.numr
+    for candidate, shift in [(exp.denr.base.a, exp.denr.base.b),
+        (exp.denr.base.b, exp.denr.base.a)]:
+      if candidate == logarithm and is_constant(shift, intg.var):
+        return logarithm, shift
+    return None
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    logarithm, shift = self._parts(intg)
+    symbols = {}
+    x = _to_sympy(intg.var, symbols)
+    c = _to_sympy(shift, symbols)
+    base = sympy.E if logarithm.base == 'euler' else _to_sympy(logarithm.base, symbols)
+    q = sympy.log(base)
+    u = sympy.log(x) + c * q
+    result = q * base ** (-c) * ((1 - c * q) * sympy.Ei(u)
+      + c * q * sympy.exp(u) / u)
+    return add_integration_constant(SympyExpression(result), intg)
+
+
+class GeneralSymbolicIntegration(IntegrationStrategy):
+  """General fallback for elementary and named-special-function antiderivatives."""
+  description = "general symbolic integration with constants held fixed"
+  _cache = {}
+
+  @classmethod
+  def _result(self, intg):
+    key = repr(intg.simplified())
+    if key in self._cache: return self._cache[key]
+    symbols = {}
+    expression = sympy.powdenest(
+      _to_sympy(intg.simplified().exp, symbols), force=True)
+    variable = symbols[repr(intg.var)]
+    result = sympy.integrate(expression, variable)
+    if result.has(sympy.Integral): result = None
+    self._cache[key] = result
+    return result
+
+  @classmethod
+  def applicable(self, intg):
+    try: return self._result(intg) != None
+    except Exception: return False
+
+  @classmethod
+  def apply(self, intg):
+    return add_integration_constant(SympyExpression(self._result(intg)), intg)
+
+
 class PolynomialDerivativeExponentialSubstitution(IntegrationStrategy):
   """Integrate c*Q'(x)*exp(Q(x)) for a rational polynomial Q."""
   description = "substitution u=Q(x) in a polynomial derivative times exp(Q(x))"
@@ -2611,9 +2907,14 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   SecantIntegerPowerReduction, SecantArbitraryPowerHypergeometric,
   TangentPowerSecantSquaredSubstitution,
   ExponentialTrigProduct,
+  ExponentialOverAffineExponentialIntegral,
   ExponentialBinomialPowerSubstitution,
   ExponentialQuadraticDenominatorSubstitution,
   LaurentPolynomialOverOnePlusSquare,
   MonomialOverPowerBinomialHypergeometric,
   ArcSinStandardForm, WinstonSlagleExample,
-  ScreenshotExamples, VersionFiveExamples]
+  ScreenshotExamples, VersionFiveExamples,
+  GeneralSineCosinePowers, ReciprocalSqrtConstantPlusSine,
+  ReciprocalXEvenQuarticSquareRoot, QuadraticSquareRootOverX,
+  LogarithmOverShiftedLogSquare,
+  GeneralSymbolicIntegration]

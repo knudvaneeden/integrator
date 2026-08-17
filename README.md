@@ -106,11 +106,155 @@ Solved:
 
     int exp( x^2 ) dx
 
+    int exp( x ) / x dx
+
+    int ( 1 + 2 * x^2 ) * exp( x^2 ) dx
+
+    int sin( exp( x ) ) dx
+
+    int exp( exp( x ) ) dx
+
+    int sin( x ) * cos( x ) dx
+
+    int x * sqrt( 1 + x^2 ) dx
+
+    int cos( 2 * x + 3 ) dx
+
+    int 2 * y * z * exp( 2 * x ) dx
+
+    int cos( exp( x ) )^2 * sin( exp( x ) )^3 * exp( x ) dx
+
+    int x^2 * sin( x^4 ) dx
+
+    int x^3 / ( x^4 + 1 ) dx
+
+    int x^( 3 * a ) * sin( x^( 2 * a ) ) dx
+
+    int sqrt( x ) / x^( 1/3 ) dx
+
+    int sqrt( ( x + 1 ) / ( 2 * x + 3 ) ) dx
+
+    int x^4 * ( 1 - x^2 )^( -5/2 ) dx
+
+    int sqrt( x ) * ( x + 1 )^( 5/2 ) dx
+
+    int sin( x )^2 dx
+
+    int sin( x )^m * cos( x )^n dx
+
+    int sin( x )^( 2 * n + 1 ) dx
+
+    int cos( x )^( 2 * n + 1 ) dx
+
+    int x * exp( x ) dx
+
+    int ( x + 1 )^2 * exp( x ) dx
+
+    int x^3 / ( x + 1 ) dx
+
+    int 1 / ( x^6 - 1 ) dx
+
+    int x * log( x ) dx
+
+    int x^2 * arcsin( x ) dx
+
+    int log( x^2 + 2 * x ) / ( x^2 + 2 * x + 1 ) dx
+
+    int log( x ) / ( log( x ) + 1 )^2 dx
+
+    int 1 / log( x ) dx
+
+    int x * ( cos( x ) + sin( x ) ) dx
+
+    int ( x + exp( x ) ) / exp( x ) dx
+
+    int ( x + exp( x ) )^2 dx
+
+    int x * cos( x ) dx
+
+    int sin( x ) / x dx
+
+    int cos( x ) / x^2 dx
+
+    int cos( x )^2 / x dx
+
+    int sin( x )^3 / x dx
+
+    int cos( x ) * ( 1 + sin( x )^3 ) dx
+
+    int 1 / ( x * ( 1 + log( x )^2 ) ) dx
+
+    int 1 / ( sqrt( 1 - x^2 ) * ( 1 + arcsin( x )^2 ) ) dx
+
+    int x * cos( x^2 ) * exp( sin( x^2 ) ) dx
+
+    int ( 2 * x^2 + 1 ) * exp( x^2 ) dx
+
+    int ( 2 * x^6 + 5 * x^4 + x^3 + 4 * x^2 + 1 ) * exp( x^2 ) / ( x^2 + 1 )^2 dx
+
+    int ( exp( x ) + 1 ) * exp( 2 * x ) dx
+
+    int ( x + 1 / x ) * log( x ) dx
+
+    int x / ( 1 + x^4 ) dx
+
+    int x^5 / ( 1 + x^4 ) dx
+
+    int 1 / ( 1 + tan( x )^2 ) dx
+
+    int x^4 / ( 1 - x^2 )^( 3/2 ) dx
+
+    int 1 / sqrt( 1 - x^2 ) dx
+
+    int sin( x )^n dx
+
+    int sin( x ) * exp( x ) dx
+
+    int -sin( x ) * exp( x ) dx
+
+    int x^n * cos( x ) dx
+
+    int 1 / sqrt( A + B * sin( x ) ) dx
+
+    int 1 / ( 1 + exp( x ) ) dx
+
+    int 10^x * exp( x ) dx
+
+    int sqrt( x^2 + 2 * x + 5 ) / x dx
+
+    int ( sin( x )^2 + 1 ) * cos( x )^2 dx
+
+    int 30 * tan( x ) * sec( x )^2 dx
+
+    int sqrt( x - x^2 + 1 ) dx
+
+    int x / ( 1 - x^2 )^( 5/2 ) dx
+
+    int log( 2 + 3 * x^2 ) dx
+
+    int 1 / ( x * sqrt( 2 * H * x^2 - a^2 ) ) dx
+
+    int 1 / ( x * sqrt( 2 * H * x^2 - a^2 - epsilon^2 ) ) dx
+
+    int 1 / ( x * sqrt( 2 * H * x^2 - a^2 - 2 * K * x^4 ) ) dx
+
+    int 1 / ( x * sqrt( 2 * H * x^2 - a^2 - epsilon^2 - 2 * K * x^4 ) ) dx
+
+    int 1 / ( x * sqrt( 2 * H * x^2 - a^2 - 2 * K * x^2 ) ) dx
+
+    int 1 / ( x * sqrt( 2 * H * x^2 - a^2 - epsilon^2 - 2 * K * x^2 ) ) dx
+
+    int x / sqrt( 2 * E * x^2 - a^2 ) dx
+
+    int x / sqrt( 2 * E * x^2 - a^2 - epsilon^2 ) dx
+
+    int x / sqrt( 2 * E * x^2 + K * x - a^2 ) dx
+
 ===
 
 Not solved:
 
-    None of the examples listed above.
+    int 1 / ( x + log( x )^2 ) dx
 
 # Author
 
