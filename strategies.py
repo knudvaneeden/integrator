@@ -2738,6 +2738,44 @@ class SquareRootOverAffineRadicand(IntegrationStrategy):
     return add_integration_constant(Sum(first, second), intg)
 
 
+class AbsoluteAffineLogarithm(IntegrationStrategy):
+  """Integrate sqrt(log_b(a*x+c)^2) as an absolute logarithm."""
+  description = "absolute value of a logarithm with affine argument"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    half = Fraction(Number(1), Number(2))
+    if (not exp.is_a(Power) or exp.exponent != half
+      or not exp.base.is_a(Power) or exp.base.exponent != Number(2)
+      or not exp.base.base.is_a(Logarithm)):
+      return None
+    logarithm = exp.base.base
+    slope = linear_coefficient(logarithm.arg, intg.var)
+    if slope == None or slope == Number(0): return None
+    return logarithm, slope
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    logarithm, slope = self._parts(intg)
+    symbols = {}
+    argument = _to_sympy(logarithm.arg, symbols)
+    sympy_slope = _to_sympy(slope, symbols)
+    base_scale = (sympy.Integer(1) if logarithm.base == 'euler'
+      else sympy.log(_to_sympy(logarithm.base, symbols)))
+    upper = (argument * sympy.log(argument) - argument) / (
+      sympy_slope * base_scale)
+    upper_continuous = upper + 2 / (sympy_slope * base_scale)
+    result = sympy.Piecewise(
+      (-upper, sympy.And(argument > 0, argument < 1)),
+      (upper_continuous, argument >= 1),
+      (sympy.nan, True))
+    return add_integration_constant(SympyExpression(result), intg)
+
+
 class GeneralSymbolicIntegration(IntegrationStrategy):
   """General fallback for elementary and named-special-function antiderivatives."""
   description = "general symbolic integration with constants held fixed"
@@ -3382,4 +3420,5 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ReciprocalQuadraticThreeHalves,
   NestedQuadraticRadical,
   LogOnePlusTangent,
+  AbsoluteAffineLogarithm,
   GeneralSymbolicIntegration]

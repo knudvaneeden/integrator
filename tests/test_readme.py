@@ -11,6 +11,7 @@ class TestReadmeExamples(unittest.TestCase):
   ADDED_VERSION_75 = ['int log( 1 + tan( x ) ) dx']
   ADDED_VERSION_76 = ['int x^2 * exp( x ) dx']
   ADDED_VERSION_77 = ['int sqrt( x ) / ( 1 + x ) dx']
+  ADDED_VERSION_78 = ['int sqrt( ln( x )^2 ) dx']
   ADDED_VERSION_58 = [
     'int sqrt( 5 * x + 4 ) dx',
     'int sin( x )^2 * cos( x ) dx',
@@ -78,11 +79,13 @@ class TestReadmeExamples(unittest.TestCase):
     self.assertEqual(len(examples),
       self.CANONICAL_VERSION_72_COUNT + len(self.ADDED_VERSION_73)
       + len(self.ADDED_VERSION_74) + len(self.ADDED_VERSION_75)
-      + len(self.ADDED_VERSION_76) + len(self.ADDED_VERSION_77))
+      + len(self.ADDED_VERSION_76) + len(self.ADDED_VERSION_77)
+      + len(self.ADDED_VERSION_78))
     self.assertEqual(examples[0], 'int ( 1 + 2 * x^2 ) * exp( x^2 ) dx')
     added = (self.ADDED_VERSION_73 + self.ADDED_VERSION_74
       + self.ADDED_VERSION_75 + self.ADDED_VERSION_76)
     added += self.ADDED_VERSION_77
+    added += self.ADDED_VERSION_78
     self.assertEqual(examples[-len(added):], added)
 
 

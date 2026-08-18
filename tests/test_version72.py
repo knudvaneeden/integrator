@@ -71,6 +71,16 @@ class TestVersion72Restoration(unittest.TestCase):
     self.assertNotIn('int[', repr(general))
     self.assertIn('arctan(', repr(general))
 
+  def test_absolute_affine_logarithm(self):
+    requested = self.solve('int sqrt( ln( x )^2 ) dx')
+    self.assertIn('Piecewise', repr(requested))
+    self.assertIn('x < 1', repr(requested))
+    self.assertIn('x >= 1', repr(requested))
+    self.assertIn('x*log(x) - x + 2', repr(requested))
+    general = self.solve('int sqrt( log( 3*x+2 )^2 ) dx')
+    self.assertNotIn('int[', repr(general))
+    self.assertIn('log(10)', repr(general))
+
 
 if __name__ == '__main__':
   unittest.main()

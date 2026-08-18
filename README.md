@@ -316,6 +316,7 @@ Solved:
     int log( 1 + tan( x ) ) dx
     int x^2 * exp( x ) dx
     int sqrt( x ) / ( 1 + x ) dx
+    int sqrt( ln( x )^2 ) dx
 
 ===
 
