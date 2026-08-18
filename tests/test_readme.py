@@ -19,6 +19,8 @@ class TestReadmeExamples(unittest.TestCase):
   ADDED_VERSION_83 = ['int 1 / ( x^2 + x - 6 ) dx']
   ADDED_VERSION_84 = ['int 1 / ( x^2 + 1 )^2 dx']
   ADDED_VERSION_85 = ['int sqrt( 4 - x^2 ) / x dx']
+  ADDED_VERSION_86 = ['int x^2 / ( x^2 + 25 ) dx']
+  ADDED_VERSION_87 = ['int x^2 / sqrt( x^2 + 25 ) dx']
   ADDED_VERSION_58 = [
     'int sqrt( 5 * x + 4 ) dx',
     'int sin( x )^2 * cos( x ) dx',
@@ -90,7 +92,8 @@ class TestReadmeExamples(unittest.TestCase):
       + len(self.ADDED_VERSION_78) + len(self.ADDED_VERSION_79)
       + len(self.ADDED_VERSION_80) + len(self.ADDED_VERSION_81)
       + len(self.ADDED_VERSION_82) + len(self.ADDED_VERSION_83)
-      + len(self.ADDED_VERSION_84) + len(self.ADDED_VERSION_85))
+      + len(self.ADDED_VERSION_84) + len(self.ADDED_VERSION_85)
+      + len(self.ADDED_VERSION_86) + len(self.ADDED_VERSION_87))
     self.assertEqual(examples[0], 'int ( 1 + 2 * x^2 ) * exp( x^2 ) dx')
     added = (self.ADDED_VERSION_73 + self.ADDED_VERSION_74
       + self.ADDED_VERSION_75 + self.ADDED_VERSION_76)
@@ -103,6 +106,8 @@ class TestReadmeExamples(unittest.TestCase):
     added += self.ADDED_VERSION_83
     added += self.ADDED_VERSION_84
     added += self.ADDED_VERSION_85
+    added += self.ADDED_VERSION_86
+    added += self.ADDED_VERSION_87
     self.assertEqual(examples[-len(added):], added)
 
 

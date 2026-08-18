@@ -324,6 +324,8 @@ Solved:
     int 1 / ( x^2 + x - 6 ) dx
     int 1 / ( x^2 + 1 )^2 dx
     int sqrt( 4 - x^2 ) / x dx
+    int x^2 / ( x^2 + 25 ) dx
+    int x^2 / sqrt( x^2 + 25 ) dx
 
 ===
 

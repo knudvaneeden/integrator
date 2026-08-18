@@ -129,6 +129,15 @@ class TestVersion72Restoration(unittest.TestCase):
     self.assertIn(r'\ln', result.latex())
     self.assertNotIn(r'\log', result.latex())
 
+  def test_general_polynomial_quotient_with_irreducible_quadratic(self):
+    result = self.solve('int x^2 / ( x^2 + 25 ) dx')
+    self.assertEqual(repr(result), '(x - 5*atan(x/5) + C)')
+
+  def test_quadratic_monomial_over_quadratic_square_root(self):
+    result = self.solve('int x^2 / sqrt( x^2 + 25 ) dx')
+    self.assertEqual(repr(result),
+      '(x*sqrt(x**2 + 25)/2 - 25*asinh(x/5)/2 + C)')
+
 
 if __name__ == '__main__':
   unittest.main()
