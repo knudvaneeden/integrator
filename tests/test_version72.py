@@ -138,6 +138,21 @@ class TestVersion72Restoration(unittest.TestCase):
     self.assertEqual(repr(result),
       '(x*sqrt(x**2 + 25)/2 - 25*asinh(x/5)/2 + C)')
 
+  def test_strategy_applicability_rejects_nonmatching_radicals_cleanly(self):
+    for problem in [
+      'int sqrt( x^3 + x + 1 ) dx',
+      'int sqrt( x^4 + 1 ) / ( x^2 + 1 ) dx']:
+      result = self.solve(problem)
+      self.assertIn('int[', repr(result), problem)
+
+  def test_reciprocal_quadratic_square_root_numeric_and_parameter(self):
+    numeric = self.solve('int 1 / sqrt( x^2 + 25 ) dx')
+    parameter = self.solve('int 1 / sqrt( x^2 + a^2 ) dx')
+    self.assertIn('ln(', repr(numeric))
+    self.assertIn('ln(', repr(parameter))
+    self.assertNotIn('int[', repr(numeric))
+    self.assertNotIn('int[', repr(parameter))
+
 
 if __name__ == '__main__':
   unittest.main()

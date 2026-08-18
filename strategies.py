@@ -2622,6 +2622,7 @@ class NestedQuadraticRadical(IntegrationStrategy):
         and possible_root.exponent == half):
         u, inner_root = candidate_u, possible_root
         break
+    if u == None or inner_root == None: return None
     slope = linear_coefficient(u, intg.var)
     if slope == None or slope == Number(0): return None
     symbols = {}
@@ -2707,7 +2708,9 @@ class SquareRootOverAffineRadicand(IntegrationStrategy):
       or not exp.denr.is_a(Sum)):
       return None
     u = exp.numr.base
-    slope = _rational_value(linear_coefficient(u, intg.var))
+    slope_expression = linear_coefficient(u, intg.var)
+    if slope_expression == None: return None
+    slope = _rational_value(slope_expression)
     if slope == None or slope == 0: return None
     A = B = None
     for constant, multiple in [(exp.denr.a, exp.denr.b),
@@ -2717,7 +2720,7 @@ class SquareRootOverAffineRadicand(IntegrationStrategy):
       if candidate_A != None and candidate_B != None:
         A, B = candidate_A, candidate_B
         break
-    if A == None or A <= 0 or B <= 0: return None
+    if A == None or B == None or A <= 0 or B <= 0: return None
     return u, slope, A, B
 
   @classmethod

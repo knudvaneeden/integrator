@@ -326,12 +326,195 @@ Solved:
     int sqrt( 4 - x^2 ) / x dx
     int x^2 / ( x^2 + 25 ) dx
     int x^2 / sqrt( x^2 + 25 ) dx
+    int x^2 / sqrt( x^4 + 1 ) dx
+    int 1 / sqrt( x^6 + 1 ) dx
+    int sqrt( x^6 + 1 ) dx
+    int 1 / ( x^3 + sqrt( x^6 + 1 ) ) dx
+    int sin( x^2 ) dx
+    int cos( x^2 ) dx
+    int exp( -x^2 ) dx
+    int exp( -x^4 ) dx
+    int exp( x^3 ) dx
+    int exp( x ) / sqrt( x ) dx
+    int exp( -x ) / x dx
+    int cos( exp( x ) ) dx
+    int exp( sqrt( x ) ) / x dx
+    int exp( 1 / x ) dx
+    int exp( x ) * ln( x ) dx
+    int ln( 1 + x^2 ) dx
+    int ln( 1 + x^3 ) dx
+    int 1 / ( x * ln( x ) ) dx
+    int 1 / ( x * ln( x ) * ln( ln( x ) ) ) dx
+    int sqrt( ln( x ) ) dx
+    int exp( sqrt( ln( x ) ) ) / x dx
+    int ln( 1 + x^4 ) dx
+    int x * ln( 1 + x^2 ) dx
+    int ln( x ) * exp( x^2 ) dx
+    int 1 / ( 1 + sin( x )^2 ) dx
+    int 1 / ( 2 + sin( x ) ) dx
+    int 1 / ( 2 + cos( x ) ) dx
+    int 1 / ( 2 + sin( x )^2 ) dx
+    int sqrt( 1 + sin( x )^2 ) dx
+    int 1 / sqrt( 1 + sin( x )^2 ) dx
+    int sin( x ) / sqrt( 2 + cos( x ) ) dx
+    int cos( x ) / sqrt( 2 + sin( x ) ) dx
+    int sin( x )^2 / ( 2 + cos( x ) ) dx
+    int cos( x )^2 / ( 2 + sin( x ) ) dx
+    int 1 / ( 2 + tan( x )^2 ) dx
+    int sin( x^2 ) * cos( x ) dx
+    int cos( x^2 ) * sin( x ) dx
+    int arcsin( x )^2 / sqrt( 1 - x^2 ) dx
+    int arctan( x )^2 / ( 1 + x^2 ) dx
+    int exp( arctan( x ) ) / ( 1 + x^2 ) dx
+    int sin( arctan( x ) ) dx
+    int cos( arctan( x ) ) dx
+    int arccot( x ) / ( 1 + x^2 ) dx
+    int arcsin( x ) * ln( x ) dx
+    int arctan( x ) * ln( x ) dx
+    int sqrt( 1 - x^4 ) dx
+    int 1 / sqrt( 1 - x^4 ) dx
+    int x / sqrt( 1 - x^4 ) dx
+    int x^2 / sqrt( 1 - x^4 ) dx
+    int 1 / sqrt( x^2 + 25 ) dx
+    int 1 / sqrt( x^2 + a^2 ) dx
+    int 1 / sqrt( x^2 - 25 ) dx
+    int x^2 / sqrt( x^2 - 25 ) dx
+    int sqrt( x^2 + 25 ) dx
+    int sqrt( x^2 - 25 ) dx
+    int x^3 / sqrt( x^2 + 25 ) dx
+    int x^3 / sqrt( x^2 - 25 ) dx
+    int 1 / ( x^2 + 25 )^2 dx
+    int x / ( x^2 + 25 )^2 dx
+    int x^2 / ( x^2 + 25 )^2 dx
+    int x^3 / ( x^2 + 25 )^2 dx
+    int 1 / ( x^2 + a^2 ) dx
+    int 1 / ( x^2 - a^2 ) dx
+    int x^2 / ( x^2 + a^2 ) dx
+    int x^2 / sqrt( x^2 + a^2 ) dx
+    int x / sqrt( x^2 + a^2 ) dx
+    int sqrt( x^2 + a^2 ) dx
+    int sqrt( a^2 - x^2 ) dx
+    int 1 / sqrt( a^2 - x^2 ) dx
+    int x^2 / sqrt( a^2 - x^2 ) dx
+    int x^4 / sqrt( a^2 - x^2 ) dx
+    int 1 / ( x * sqrt( x^2 + a^2 ) ) dx
+    int 1 / ( x * sqrt( x^2 - a^2 ) ) dx
+    int sqrt( x^2 + a^2 ) / x dx
+    int sqrt( x^2 - a^2 ) / x dx
+    int x / sqrt( a * x^2 + b ) dx
+    int 1 / sqrt( a * x^2 + b ) dx
+    int sqrt( a * x^2 + b ) dx
+    int x^2 / sqrt( a * x^2 + b ) dx
+    int 1 / ( a * x^2 + b ) dx
+    int 1 / ( a * x^2 + b )^2 dx
+    int x / ( a * x^2 + b ) dx
+    int x^2 / ( a * x^2 + b ) dx
+    int x^3 / ( a * x^2 + b ) dx
+    int 1 / ( a * x^2 + b * x + c ) dx
+    int x / ( a * x^2 + b * x + c ) dx
+    int ( 2 * a * x + b ) / ( a * x^2 + b * x + c ) dx
+    int 1 / ( a * x^2 + b * x + c )^2 dx
+    int x / ( a * x^2 + b * x + c )^2 dx
+    int sin( x^3 ) dx
+    int cos( x^3 ) dx
+    int exp( -x^6 ) dx
+    int ln( 1 + x^6 ) dx
+    int ln( 1 + x^5 ) dx
+    int sin( x^3 ) / x dx
+    int cos( x^3 ) / x dx
+    int exp( x^2 ) / sqrt( x ) dx
+    int exp( -x^2 ) / x dx
+    int 1 / ( 3 + sin( x )^2 ) dx
+    int 1 / ( 3 + cos( x )^2 ) dx
+    int sqrt( 2 + sin( x )^2 ) dx
+    int 1 / sqrt( 2 + sin( x )^2 ) dx
+    int arctan( x )^3 / ( 1 + x^2 ) dx
+    int arcsin( x )^3 / sqrt( 1 - x^2 ) dx
+    int exp( 2 * arctan( x ) ) / ( 1 + x^2 ) dx
+    int ln( arctan( x ) ) / ( 1 + x^2 ) dx
+    int sqrt( 1 + x^8 ) dx
+    int 1 / ( x^2 + 49 ) dx
+    int x^2 / sqrt( x^2 + 49 ) dx
 
 ===
 
 Not solved:
 
     int 1 / ( x + log( x )^2 ) dx
+    int 1 / sqrt( x^3 + x + 1 ) dx
+    int 1 / sqrt( x^4 + x + 1 ) dx
+    int sqrt( x^3 + x + 1 ) dx
+    int sqrt( x^4 + x + 1 ) dx
+    int x / sqrt( x^4 + x + 1 ) dx
+    int x^2 / sqrt( x^4 + x + 1 ) dx
+    int 1 / ( ( x + 1 ) * sqrt( x^3 + x + 1 ) ) dx
+    int 1 / ( ( x^2 + 1 ) * sqrt( x^4 + x + 1 ) ) dx
+    int sqrt( ( x^2 + 1 ) / ( x^2 + 2 ) ) dx
+    int 1 / sqrt( ( x^2 + 1 ) * ( x^2 + 2 ) ) dx
+    int sqrt( x^4 + 1 ) / ( x^2 + 1 ) dx
+    int sqrt( x^2 + x + 1 ) / ( x^2 + 1 ) dx
+    int 1 / sqrt( x^4 - x + 1 ) dx
+    int x / sqrt( x^4 - x + 1 ) dx
+    int 1 / ( ( x - 1 ) * sqrt( x^4 + 1 ) ) dx
+    int sqrt( x^4 + x^2 + 1 ) / x dx
+    int exp( x^2 ) / ( 1 + x^2 ) dx
+    int exp( x ) / ( 1 + x^2 ) dx
+    int exp( x^2 ) * sin( x ) dx
+    int exp( x ) * sin( x^2 ) dx
+    int exp( sin( x ) ) dx
+    int exp( cos( x ) ) dx
+    int exp( tan( x ) ) dx
+    int sin( exp( x ) ) / x dx
+    int cos( exp( x ) ) / x dx
+    int ln( x ) / ( 1 + x^2 ) dx
+    int ln( x )^2 / ( 1 + x ) dx
+    int ln( sin( x ) ) dx
+    int ln( cos( x ) ) dx
+    int ln( tan( x ) ) dx
+    int ln( 1 + sin( x ) ) dx
+    int ln( x ) / sqrt( 1 - x^2 ) dx
+    int ln( x ) / sqrt( 1 + x^2 ) dx
+    int ln( x^2 + x + 1 ) / x dx
+    int ln( 1 + exp( x ) ) dx
+    int ln( 1 + exp( x^2 ) ) dx
+    int sqrt( 1 + cos( x )^2 ) dx
+    int 1 / sqrt( 1 + cos( x )^2 ) dx
+    int tan( x )^( 1 / 2 ) dx
+    int sec( x )^( 1 / 2 ) dx
+    int sin( x ) / sqrt( 1 + sin( x )^2 ) dx
+    int cos( x ) / sqrt( 1 + cos( x )^2 ) dx
+    int sqrt( 1 + tan( x )^2 ) dx
+    int ln( arctan( x ) ) dx
+    int 1 / arctan( x ) dx
+    int arctan( x ) / x dx
+    int arcsin( x ) / x dx
+    int arccos( x ) / x dx
+    int arcsec( x ) / x dx
+    int arcsin( x ) * exp( x ) dx
+    int arctan( x ) * exp( x ) dx
+    int exp( sin( x^2 ) ) dx
+    int exp( cos( x^2 ) ) dx
+    int ln( x ) / ( 1 + x^4 ) dx
+    int ln( x )^2 / ( 1 + x^2 ) dx
+    int ln( sin( x^2 ) ) dx
+    int ln( cos( x^2 ) ) dx
+    int sqrt( 2 + cos( x )^2 ) dx
+    int 1 / sqrt( 2 + cos( x )^2 ) dx
+    int tan( x )^( 3 / 2 ) dx
+    int sec( x )^( 3 / 2 ) dx
+
+The additional version 88 examples were selected from families documented by
+the NIST Digital Library of Mathematical Functions (error, Fresnel,
+exponential, logarithmic, and elliptic integrals) and from the Rubi
+rule-based integration test-suite approach:
+
+https://dlmf.nist.gov/6
+
+https://dlmf.nist.gov/7
+
+https://dlmf.nist.gov/19.2
+
+https://rulebasedintegration.org/
 
 # Author
 
@@ -564,7 +747,7 @@ as `sec(u)^2`, `csc(u)^2`, `sec(u)*tan(u)`, and `csc(u)*cot(u)`.
 
 Examples:
 
-    int sin(x) dx
+For example: `int sin(x) dx`
     int cos(3*x+2) dx
     int sec(2*x)^2 dx
     int csc(4*x)*cot(4*x) dx
@@ -572,7 +755,7 @@ Examples:
 The worked Slagle example discussed by Patrick Winston in MIT 6.034 Lecture 2
 is also supported:
 
-    int x^4/(1-x^2)^(5/2) dx
+For example: `int x^4/(1-x^2)^(5/2) dx`
 
 The parser also accepts `sqrt(x)`, `exp(x)`, `log(x)`/`ln(x)`, `asin(x)`,
 and `atan(x)`.  The regression suite includes every distinct integral in

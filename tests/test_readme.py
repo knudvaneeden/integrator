@@ -21,6 +21,18 @@ class TestReadmeExamples(unittest.TestCase):
   ADDED_VERSION_85 = ['int sqrt( 4 - x^2 ) / x dx']
   ADDED_VERSION_86 = ['int x^2 / ( x^2 + 25 ) dx']
   ADDED_VERSION_87 = ['int x^2 / sqrt( x^2 + 25 ) dx']
+  ADDED_VERSION_88_SOLVED_COUNT = 49
+  ADDED_VERSION_88_SOLVED_FIRST = 'int x^2 / sqrt( x^4 + 1 ) dx'
+  ADDED_VERSION_88_SOLVED_LAST = 'int x^2 / sqrt( 1 - x^4 ) dx'
+  ADDED_VERSION_88_UNSOLVED_COUNT = 51
+  ADDED_VERSION_88_UNSOLVED_FIRST = 'int 1 / sqrt( x^3 + x + 1 ) dx'
+  ADDED_VERSION_88_UNSOLVED_LAST = 'int arctan( x ) * exp( x ) dx'
+  ADDED_VERSION_89_SOLVED_COUNT = 60
+  ADDED_VERSION_89_SOLVED_FIRST = 'int 1 / sqrt( x^2 + 25 ) dx'
+  ADDED_VERSION_89_SOLVED_LAST = 'int x^2 / sqrt( x^2 + 49 ) dx'
+  ADDED_VERSION_89_UNSOLVED_COUNT = 10
+  ADDED_VERSION_89_UNSOLVED_FIRST = 'int exp( sin( x^2 ) ) dx'
+  ADDED_VERSION_89_UNSOLVED_LAST = 'int sec( x )^( 3 / 2 ) dx'
   ADDED_VERSION_58 = [
     'int sqrt( 5 * x + 4 ) dx',
     'int sin( x )^2 * cos( x ) dx',
@@ -93,7 +105,9 @@ class TestReadmeExamples(unittest.TestCase):
       + len(self.ADDED_VERSION_80) + len(self.ADDED_VERSION_81)
       + len(self.ADDED_VERSION_82) + len(self.ADDED_VERSION_83)
       + len(self.ADDED_VERSION_84) + len(self.ADDED_VERSION_85)
-      + len(self.ADDED_VERSION_86) + len(self.ADDED_VERSION_87))
+      + len(self.ADDED_VERSION_86) + len(self.ADDED_VERSION_87)
+      + self.ADDED_VERSION_88_SOLVED_COUNT
+      + self.ADDED_VERSION_89_SOLVED_COUNT)
     self.assertEqual(examples[0], 'int ( 1 + 2 * x^2 ) * exp( x^2 ) dx')
     added = (self.ADDED_VERSION_73 + self.ADDED_VERSION_74
       + self.ADDED_VERSION_75 + self.ADDED_VERSION_76)
@@ -108,7 +122,47 @@ class TestReadmeExamples(unittest.TestCase):
     added += self.ADDED_VERSION_85
     added += self.ADDED_VERSION_86
     added += self.ADDED_VERSION_87
-    self.assertEqual(examples[-len(added):], added)
+    recent_count = (self.ADDED_VERSION_88_SOLVED_COUNT
+      + self.ADDED_VERSION_89_SOLVED_COUNT)
+    start = -(len(added) + recent_count)
+    self.assertEqual(examples[start:-recent_count], added)
+    version_88 = examples[-recent_count:-self.ADDED_VERSION_89_SOLVED_COUNT]
+    self.assertEqual(version_88[0], self.ADDED_VERSION_88_SOLVED_FIRST)
+    self.assertEqual(version_88[-1], self.ADDED_VERSION_88_SOLVED_LAST)
+    version_89 = examples[-self.ADDED_VERSION_89_SOLVED_COUNT:]
+    self.assertEqual(version_89[0], self.ADDED_VERSION_89_SOLVED_FIRST)
+    self.assertEqual(version_89[-1], self.ADDED_VERSION_89_SOLVED_LAST)
+
+  def test_version_88_research_examples_are_unique_and_classified(self):
+    readme = Path(__file__).resolve().parents[1] / 'README.md'
+    lines = readme.read_text().splitlines()
+    not_solved_start = lines.index('Not solved:') + 1
+    author_start = lines.index('# Author', not_solved_start)
+    not_solved = [line.strip() for line in lines[not_solved_start:author_start]
+      if line.strip().startswith('int ')]
+    self.assertEqual(len(not_solved),
+      1 + self.ADDED_VERSION_88_UNSOLVED_COUNT
+      + self.ADDED_VERSION_89_UNSOLVED_COUNT)
+    recent_count = (self.ADDED_VERSION_88_UNSOLVED_COUNT
+      + self.ADDED_VERSION_89_UNSOLVED_COUNT)
+    version_88 = not_solved[-recent_count:-self.ADDED_VERSION_89_UNSOLVED_COUNT]
+    self.assertEqual(version_88[0], self.ADDED_VERSION_88_UNSOLVED_FIRST)
+    self.assertEqual(version_88[-1], self.ADDED_VERSION_88_UNSOLVED_LAST)
+    version_89 = not_solved[-self.ADDED_VERSION_89_UNSOLVED_COUNT:]
+    self.assertEqual(version_89[0], self.ADDED_VERSION_89_UNSOLVED_FIRST)
+    self.assertEqual(version_89[-1], self.ADDED_VERSION_89_UNSOLVED_LAST)
+
+    all_examples = self._solved_examples() + not_solved
+    canonical = [repr(parse(example).simplified()) for example in all_examples]
+    self.assertEqual(len(canonical), len(set(canonical)))
+
+  def test_readme_contains_exactly_500_integral_examples(self):
+    readme = Path(__file__).resolve().parents[1] / 'README.md'
+    examples = [line.strip() for line in readme.read_text().splitlines()
+      if line.strip().startswith('int ')]
+    self.assertEqual(len(examples), 500)
+    canonical = [repr(parse(example).simplified()) for example in examples]
+    self.assertEqual(len(canonical), len(set(canonical)))
 
 
 if __name__ == '__main__':
