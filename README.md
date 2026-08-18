@@ -314,6 +314,8 @@ Solved:
     int sqrt( x - sqrt( x^2 - 1 ) ) dx
     int sqrt( 2 * x - sqrt( 4 * x^2 - 1 ) ) dx
     int log( 1 + tan( x ) ) dx
+    int x^2 * exp( x ) dx
+    int sqrt( x ) / ( 1 + x ) dx
 
 ===
 

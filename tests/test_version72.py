@@ -57,6 +57,20 @@ class TestVersion72Restoration(unittest.TestCase):
     base_ten = self.solve('int log( 1 + tan( x ) ) dx')
     self.assertIn('ln(10)', repr(base_ten))
 
+  def test_polynomial_times_exponential_requested_example(self):
+    result = self.solve('int x^2 * exp( x ) dx')
+    self.assertEqual(repr(result),
+      '((exp(x) * (((x ^ 2) + (-2 * x)) + 2)) + C)')
+
+  def test_square_root_over_affine_radicand(self):
+    requested = self.solve('int sqrt( x ) / ( 1 + x ) dx')
+    self.assertEqual(repr(requested),
+      '(((2 * (x ^ (1 / 2))) + (-2 * arctan((x ^ (1 / 2))))) + C)')
+    general = self.solve(
+      'int sqrt( 2*x+1 ) / ( 3 + 5*(2*x+1) ) dx')
+    self.assertNotIn('int[', repr(general))
+    self.assertIn('arctan(', repr(general))
+
 
 if __name__ == '__main__':
   unittest.main()

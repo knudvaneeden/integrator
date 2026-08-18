@@ -2687,6 +2687,57 @@ class LogOnePlusTangent(IntegrationStrategy):
     return add_integration_constant(primitive, intg)
 
 
+class SquareRootOverAffineRadicand(IntegrationStrategy):
+  """Integrate sqrt(u)/(A+B*u) for affine u and positive rational A,B."""
+  description = "square-root substitution in a matching affine denominator"
+
+  @classmethod
+  def _multiple(self, expr, base):
+    if expr == base: return Rational(1)
+    if expr.is_a(Product):
+      if expr.a == base: return _rational_value(expr.b)
+      if expr.b == base: return _rational_value(expr.a)
+    return None
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if (not exp.is_a(Fraction) or not exp.numr.is_a(Power)
+      or exp.numr.exponent != Fraction(Number(1), Number(2))
+      or not exp.denr.is_a(Sum)):
+      return None
+    u = exp.numr.base
+    slope = _rational_value(linear_coefficient(u, intg.var))
+    if slope == None or slope == 0: return None
+    A = B = None
+    for constant, multiple in [(exp.denr.a, exp.denr.b),
+      (exp.denr.b, exp.denr.a)]:
+      candidate_A = _rational_value(constant)
+      candidate_B = self._multiple(multiple, u)
+      if candidate_A != None and candidate_B != None:
+        A, B = candidate_A, candidate_B
+        break
+    if A == None or A <= 0 or B <= 0: return None
+    return u, slope, A, B
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    u, slope, A, B = self._parts(intg)
+    root = Power(u, Fraction(Number(1), Number(2)))
+    first = _scale_by_rational(root, Rational(2) / (slope * B))
+    argument_scale = _rational_square_root_expression(B / A)
+    argument = (root if argument_scale == Number(1)
+      else Product(argument_scale, root).simplified())
+    standard = Fraction(TrigFunction('arctan', argument),
+      _rational_square_root_expression(A * B)).simplified()
+    second = _scale_by_rational(standard,
+      Rational(-2) * A / (slope * B))
+    return add_integration_constant(Sum(first, second), intg)
+
+
 class GeneralSymbolicIntegration(IntegrationStrategy):
   """General fallback for elementary and named-special-function antiderivatives."""
   description = "general symbolic integration with constants held fixed"
@@ -3319,6 +3370,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ExponentialQuadraticDenominatorSubstitution,
   LaurentPolynomialOverOnePlusSquare,
   RationalPolynomialPartialFractions,
+  SquareRootOverAffineRadicand,
   MonomialOverPowerBinomialHypergeometric,
   ArcSinStandardForm, WinstonSlagleExample,
   ScreenshotExamples, VersionFiveExamples,
