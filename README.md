@@ -573,7 +573,7 @@ The machine will work to solve the integration problem, and will share its
 thoughts and methods with you.
 
 ## Demo
-You can try the integrator for yourself [here](http://milessteele.com:5000).
+You can try the integrator for yourself [here](http://108.181.171.91/integrator/).
 
 ## Getting Your Hands Dirty
 
