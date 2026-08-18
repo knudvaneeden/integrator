@@ -2776,6 +2776,34 @@ class AbsoluteAffineLogarithm(IntegrationStrategy):
     return add_integration_constant(SympyExpression(result), intg)
 
 
+class LogarithmicDerivative(IntegrationStrategy):
+  """Integrate a constant multiple of f'(x)/f(x)."""
+  description = "constant multiple of a logarithmic derivative"
+
+  @classmethod
+  def _parts(self, intg):
+    exp = intg.simplified().exp
+    if not exp.is_a(Fraction): return None
+    symbols = {}
+    numerator = _to_sympy(exp.numr, symbols)
+    denominator = _to_sympy(exp.denr, symbols)
+    variable = _to_sympy(intg.var, symbols)
+    derivative = sympy.diff(denominator, variable)
+    if derivative == 0: return None
+    multiplier = sympy.simplify(numerator / derivative)
+    if multiplier.has(variable): return None
+    return multiplier, denominator
+
+  @classmethod
+  def applicable(self, intg): return self._parts(intg) != None
+
+  @classmethod
+  def apply(self, intg):
+    multiplier, denominator = self._parts(intg)
+    result = sympy.simplify(multiplier * sympy.log(denominator))
+    return add_integration_constant(SympyExpression(result), intg)
+
+
 class GeneralSymbolicIntegration(IntegrationStrategy):
   """General fallback for elementary and named-special-function antiderivatives."""
   description = "general symbolic integration with constants held fixed"
@@ -3407,6 +3435,7 @@ STRATEGIES = [ConstantTerm, ConstantFactor, ConstantDivisor, SimpleIntegral,
   ExponentialBinomialPowerSubstitution,
   ExponentialQuadraticDenominatorSubstitution,
   LaurentPolynomialOverOnePlusSquare,
+  LogarithmicDerivative,
   RationalPolynomialPartialFractions,
   SquareRootOverAffineRadicand,
   MonomialOverPowerBinomialHypergeometric,

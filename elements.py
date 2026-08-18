@@ -451,11 +451,15 @@ class SympyExpression(Expression):
     self.expression = expression
 
   def __repr__(self):
-    return str(self.expression)
+    # SymPy's log() is always the natural logarithm.  Keep the user-facing
+    # notation distinct from this project's base-10 log() parser spelling.
+    import re
+    return re.sub(r'(?<![A-Za-z_])log\(', 'ln(', str(self.expression))
 
   def latex(self):
+    import re
     import sympy
-    return sympy.latex(self.expression)
+    return re.sub(r'\\log(?=[{(])', r'\\ln', sympy.latex(self.expression))
 
 
 class TrigFunction(Expression):

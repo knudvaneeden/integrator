@@ -556,8 +556,8 @@ class TestStrategies(unittest.TestCase):
     requested = 'int 1 / ( 1 + x^3 ) dx'
     result = attempt_integral(parse(requested), SubLogger('test'))
     rendered = repr(result)
-    self.assertEqual('log(x + 1)/3' in rendered, True)
-    self.assertEqual('log(x**2 - x + 1)/6' in rendered, True)
+    self.assertEqual('ln(x + 1)/3' in rendered, True)
+    self.assertEqual('ln(x**2 - x + 1)/6' in rendered, True)
     self.assertEqual('sqrt(3)*atan' in rendered, True)
     self.assertEqual('hypergeometric2F1' in rendered, False)
 

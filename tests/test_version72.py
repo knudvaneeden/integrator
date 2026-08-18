@@ -76,10 +76,10 @@ class TestVersion72Restoration(unittest.TestCase):
     self.assertIn('Piecewise', repr(requested))
     self.assertIn('x < 1', repr(requested))
     self.assertIn('x >= 1', repr(requested))
-    self.assertIn('x*log(x) - x + 2', repr(requested))
+    self.assertIn('x*ln(x) - x + 2', repr(requested))
     general = self.solve('int sqrt( log( 3*x+2 )^2 ) dx')
     self.assertNotIn('int[', repr(general))
-    self.assertIn('log(10)', repr(general))
+    self.assertIn('ln(10)', repr(general))
 
   def test_affine_power_uses_compact_substitution(self):
     requested = self.solve('int ( 2 * x + 3 )^5 dx')
@@ -100,6 +100,34 @@ class TestVersion72Restoration(unittest.TestCase):
     self.assertIn('(x / 2)', repr(result))
     general = self.solve('int sin( 3 * x + 1 )^8 dx')
     self.assertNotIn('int[', repr(general))
+
+  def test_general_logarithmic_derivative(self):
+    requested = self.solve('int ( 2 * x^2 ) / ( 1 + x^3 ) dx')
+    self.assertEqual(repr(requested), '(2*ln(x**3 + 1)/3 + C)')
+    for problem in [
+      'int ( 6*x + 2 ) / ( 3*x^2 + 2*x + 5 ) dx',
+      'int cos( x ) / sin( x ) dx']:
+      result = self.solve(problem)
+      self.assertNotIn('int[', repr(result), problem)
+
+  def test_general_rational_partial_fractions_quadratic(self):
+    result = self.solve('int 1 / ( x^2 + x - 6 ) dx')
+    self.assertEqual(repr(result),
+      '(ln(x - 2)/5 - ln(x + 3)/5 + C)')
+
+  def test_general_rational_repeated_irreducible_quadratic(self):
+    result = self.solve('int 1 / ( x^2 + 1 )^2 dx')
+    self.assertEqual(repr(result),
+      '(x/(2*x**2 + 2) + atan(x)/2 + C)')
+
+  def test_square_root_quadratic_over_x_uses_natural_log_notation(self):
+    result = self.solve('int sqrt( 4 - x^2 ) / x dx')
+    rendered = repr(result)
+    self.assertNotIn('int[', rendered)
+    self.assertIn('ln(', rendered)
+    self.assertNotIn('log(', rendered)
+    self.assertIn(r'\ln', result.latex())
+    self.assertNotIn(r'\log', result.latex())
 
 
 if __name__ == '__main__':

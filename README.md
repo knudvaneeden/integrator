@@ -320,6 +320,10 @@ Solved:
     int ( 2 * x + 3 )^5 dx
     int x^4 * exp( x ) dx
     int sin( 2 * x )^2 dx
+    int ( 2 * x^2 ) / ( 1 + x^3 ) dx
+    int 1 / ( x^2 + x - 6 ) dx
+    int 1 / ( x^2 + 1 )^2 dx
+    int sqrt( 4 - x^2 ) / x dx
 
 ===
 
