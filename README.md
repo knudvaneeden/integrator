@@ -317,6 +317,9 @@ Solved:
     int x^2 * exp( x ) dx
     int sqrt( x ) / ( 1 + x ) dx
     int sqrt( ln( x )^2 ) dx
+    int ( 2 * x + 3 )^5 dx
+    int x^4 * exp( x ) dx
+    int sin( 2 * x )^2 dx
 
 ===
 

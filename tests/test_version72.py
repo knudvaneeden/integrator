@@ -81,6 +81,26 @@ class TestVersion72Restoration(unittest.TestCase):
     self.assertNotIn('int[', repr(general))
     self.assertIn('log(10)', repr(general))
 
+  def test_affine_power_uses_compact_substitution(self):
+    requested = self.solve('int ( 2 * x + 3 )^5 dx')
+    self.assertEqual(repr(requested),
+      '(((((2 * x) + 3) ^ 6) / 12) + C)')
+    general = self.solve('int ( 3 * x - 5 )^12 dx')
+    self.assertNotIn('int[', repr(general))
+
+  def test_fourth_power_times_exponential(self):
+    result = self.solve('int x^4 * exp( x ) dx')
+    self.assertEqual(repr(result),
+      '((exp(x) * (((((x ^ 4) + (-4 * (x ^ 3))) + (12 * (x ^ 2))) '
+      '+ (-24 * x)) + 24)) + C)')
+
+  def test_sine_squared_with_affine_phase(self):
+    result = self.solve('int sin( 2 * x )^2 dx')
+    self.assertNotIn('int[', repr(result))
+    self.assertIn('(x / 2)', repr(result))
+    general = self.solve('int sin( 3 * x + 1 )^8 dx')
+    self.assertNotIn('int[', repr(general))
+
 
 if __name__ == '__main__':
   unittest.main()
